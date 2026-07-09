@@ -1,73 +1,64 @@
 import { useState, useEffect } from 'react'
 
 const STORAGE_KEY = 'wordy_words'
+const EVENT = 'wordy:update'
 
-// Module-level state shared across all components
-let _words = (() => {
+function read() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
-})()
-
-const subscribers = new Set()
-
-function notify() {
-  subscribers.forEach(fn => fn([..._words]))
 }
 
-function persist() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(_words))
+function write(words) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(words))
+  window.dispatchEvent(new CustomEvent(EVENT))
 }
 
-// Hook — any component using this re-renders automatically when words change
 export function useWords() {
-  const [words, setWords] = useState(() => [..._words])
+  const [words, setWords] = useState(read)
   useEffect(() => {
-    subscribers.add(setWords)
-    return () => subscribers.delete(setWords)
+    const sync = () => setWords(read())
+    window.addEventListener(EVENT, sync)
+    return () => window.removeEventListener(EVENT, sync)
   }, [])
   return words
 }
 
-// Plain getter for non-reactive reads (stats calculations, etc.)
 export function getWords() {
-  return [..._words]
+  return read()
 }
 
 export function saveWord(word) {
-  const existing = _words.findIndex(w =>
+  const words = read()
+  const i = words.findIndex(w =>
     w.original.toLowerCase() === word.original.toLowerCase() &&
     w.fromLang === word.fromLang
   )
-  if (existing >= 0) {
-    _words[existing] = { ..._words[existing], ...word, updatedAt: Date.now() }
+  if (i >= 0) {
+    words[i] = { ...words[i], ...word, updatedAt: Date.now() }
   } else {
-    _words.unshift({ ...word, id: Date.now(), addedAt: Date.now(), score: 0, reviewCount: 0 })
+    words.unshift({ ...word, id: Date.now(), addedAt: Date.now(), score: 0, reviewCount: 0 })
   }
-  persist()
-  notify()
+  write(words)
 }
 
 export function updateWordScore(id, delta) {
-  const w = _words.find(w => w.id === id)
+  const words = read()
+  const w = words.find(w => w.id === id)
   if (w) {
     w.score = Math.max(-10, Math.min(10, (w.score || 0) + delta))
     w.reviewCount = (w.reviewCount || 0) + 1
     w.lastReviewed = Date.now()
   }
-  persist()
-  notify()
+  write(words)
 }
 
 export function deleteWord(id) {
-  _words = _words.filter(w => w.id !== id)
-  persist()
-  notify()
+  write(read().filter(w => w.id !== id))
 }
 
 export function getStats(words) {
   const total = words.length
   const byCategory = {}
   const scoreGroups = { known: 0, learning: 0, new: 0 }
-
   words.forEach(w => {
     const cat = w.category || 'Sin categoría'
     byCategory[cat] = (byCategory[cat] || 0) + 1
@@ -75,7 +66,6 @@ export function getStats(words) {
     else if (w.score >= 0) scoreGroups.learning++
     else scoreGroups.new++
   })
-
   const levelPercent = total === 0 ? 0 : Math.round((scoreGroups.known / total) * 100)
   return { total, byCategory, scoreGroups, levelPercent }
 }
