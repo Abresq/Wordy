@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ArrowLeftRight, Loader2, BookmarkPlus, Check, Sparkles, Sun, Moon, Zap } from 'lucide-react'
 import { LANGUAGES, translateAndAnalyze } from '../api'
-import { saveWord, getWords } from '../store'
+import { saveWord, useWords } from '../store'
 import { useTheme } from '../theme.jsx'
 
 const CATEGORY_COLORS = {
@@ -15,6 +15,7 @@ const CATEGORY_COLORS = {
 
 export default function Translator() {
   const { isDark, toggle } = useTheme()
+  const words = useWords()
   const [text, setText] = useState('')
   const [fromLang, setFromLang] = useState('de')
   const [toLang, setToLang] = useState('es')
@@ -22,15 +23,8 @@ export default function Translator() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
-  const [recentWords, setRecentWords] = useState([])
 
-  useEffect(() => {
-    setRecentWords(getWords().slice(0, 5))
-  }, [saved])
-
-  const card = isDark
-    ? 'bg-zinc-900 border-zinc-800'
-    : 'bg-white border-zinc-200 shadow-sm'
+  const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'
   const input = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'
   const subtext = isDark ? 'text-zinc-500' : 'text-zinc-400'
   const label = isDark ? 'text-zinc-300' : 'text-zinc-600'
@@ -82,7 +76,10 @@ export default function Translator() {
   }
 
   const catColor = result ? (CATEGORY_COLORS[result.category] || '#6366f1') : '#6366f1'
-  const totalWords = getWords().length
+  const today = new Date().toDateString()
+  const recentWords = words.slice(0, 5)
+  const todayCount = words.filter(w => new Date(w.addedAt).toDateString() === today).length
+  const dominatedCount = words.filter(w => (w.score || 0) >= 3).length
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-28 max-w-lg mx-auto">
@@ -106,11 +103,11 @@ export default function Translator() {
       </div>
 
       {/* Quick stats bar */}
-      <div className={`grid grid-cols-3 gap-2`}>
+      <div className="grid grid-cols-3 gap-2">
         {[
-          { label: 'Guardadas', value: totalWords, color: '#8b5cf6', emoji: '📚' },
-          { label: 'Hoy', value: getWords().filter(w => new Date(w.addedAt).toDateString() === new Date().toDateString()).length, color: '#0ea5e9', emoji: '⚡' },
-          { label: 'Dominadas', value: getWords().filter(w => (w.score || 0) >= 3).length, color: '#22c55e', emoji: '✅' },
+          { label: 'Guardadas', value: words.length, color: '#8b5cf6', emoji: '📚' },
+          { label: 'Hoy', value: todayCount, color: '#0ea5e9', emoji: '⚡' },
+          { label: 'Dominadas', value: dominatedCount, color: '#22c55e', emoji: '✅' },
         ].map(({ label, value, color, emoji }) => (
           <div key={label} className={`rounded-2xl border p-3 text-center ${card}`}>
             <p className="text-lg">{emoji}</p>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { RotateCw, ThumbsUp, Minus, ThumbsDown, CheckCircle2, GalleryHorizontal } from 'lucide-react'
-import { getWords, updateWordScore } from '../store'
+import { useWords, updateWordScore } from '../store'
 import { useTheme } from '../theme.jsx'
 
 const CATEGORY_COLORS = {
@@ -23,10 +23,11 @@ export default function Flashcards() {
   const [done, setDone] = useState(false)
   const [sessionResults, setSessionResults] = useState({ known: 0, learning: 0, unknown: 0 })
 
-  useEffect(() => { loadDeck() }, [])
+  const allWords = useWords()
 
-  function loadDeck() {
-    const words = getWords()
+  useEffect(() => { loadDeck(allWords) }, [])
+
+  function loadDeck(words = allWords) {
     if (!words.length) { setDeck([]); return }
     setDeck(smartSort(words))
     setIndex(0)

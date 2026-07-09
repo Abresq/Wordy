@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Search, Trash2, Filter, BookOpen } from 'lucide-react'
-import { getWords, deleteWord } from '../store'
+import { useWords, deleteWord } from '../store'
 import { useTheme } from '../theme.jsx'
 
 const CATEGORY_COLORS = {
@@ -26,14 +26,12 @@ function scoreGroup(score) {
 
 export default function Vocabulary() {
   const { isDark } = useTheme()
-  const [words, setWords] = useState([])
+  const words = useWords()
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('Todas')
   const [showFilter, setShowFilter] = useState(false)
 
-  useEffect(() => { setWords(getWords()) }, [])
-
-  function handleDelete(id) { setWords(deleteWord(id)) }
+  function handleDelete(id) { deleteWord(id) }
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'
   const subtext = isDark ? 'text-zinc-500' : 'text-zinc-400'

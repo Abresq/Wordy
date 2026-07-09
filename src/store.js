@@ -1,45 +1,66 @@
-// Persistent storage using localStorage
+import { useState, useEffect } from 'react'
+
 const STORAGE_KEY = 'wordy_words'
 
+// Module-level state shared across all components
+let _words = (() => {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
+})()
+
+const subscribers = new Set()
+
+function notify() {
+  subscribers.forEach(fn => fn([..._words]))
+}
+
+function persist() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(_words))
+}
+
+// Hook — any component using this re-renders automatically when words change
+export function useWords() {
+  const [words, setWords] = useState(() => [..._words])
+  useEffect(() => {
+    subscribers.add(setWords)
+    return () => subscribers.delete(setWords)
+  }, [])
+  return words
+}
+
+// Plain getter for non-reactive reads (stats calculations, etc.)
 export function getWords() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-  } catch {
-    return []
-  }
+  return [..._words]
 }
 
 export function saveWord(word) {
-  const words = getWords()
-  const existing = words.findIndex(w =>
+  const existing = _words.findIndex(w =>
     w.original.toLowerCase() === word.original.toLowerCase() &&
     w.fromLang === word.fromLang
   )
   if (existing >= 0) {
-    words[existing] = { ...words[existing], ...word, updatedAt: Date.now() }
+    _words[existing] = { ..._words[existing], ...word, updatedAt: Date.now() }
   } else {
-    words.unshift({ ...word, id: Date.now(), addedAt: Date.now(), score: 0, reviewCount: 0 })
+    _words.unshift({ ...word, id: Date.now(), addedAt: Date.now(), score: 0, reviewCount: 0 })
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(words))
-  return getWords()
+  persist()
+  notify()
 }
 
 export function updateWordScore(id, delta) {
-  const words = getWords()
-  const w = words.find(w => w.id === id)
+  const w = _words.find(w => w.id === id)
   if (w) {
     w.score = Math.max(-10, Math.min(10, (w.score || 0) + delta))
     w.reviewCount = (w.reviewCount || 0) + 1
     w.lastReviewed = Date.now()
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(words))
-  return getWords()
+  persist()
+  notify()
 }
 
 export function deleteWord(id) {
-  const words = getWords().filter(w => w.id !== id)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(words))
-  return words
+  _words = _words.filter(w => w.id !== id)
+  persist()
+  notify()
 }
 
 export function getStats(words) {
@@ -56,6 +77,5 @@ export function getStats(words) {
   })
 
   const levelPercent = total === 0 ? 0 : Math.round((scoreGroups.known / total) * 100)
-
   return { total, byCategory, scoreGroups, levelPercent }
 }

@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
 import { BarChart2, TrendingUp, Award } from 'lucide-react'
-import { getWords, getStats } from '../store'
+import { useWords, getStats } from '../store'
 import { useTheme } from '../theme.jsx'
 
 const CATEGORY_COLORS = {
@@ -22,22 +21,14 @@ function getLevel(pct) {
 
 export default function Stats() {
   const { isDark } = useTheme()
-  const [stats, setStats] = useState(null)
-  const [words, setWords] = useState([])
-
-  useEffect(() => {
-    const w = getWords()
-    setWords(w)
-    setStats(getStats(w))
-  }, [])
+  const words = useWords()
+  const stats = getStats(words)
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'
   const subtext = isDark ? 'text-zinc-500' : 'text-zinc-400'
   const text = isDark ? 'text-white' : 'text-zinc-900'
   const muted = isDark ? 'text-zinc-300' : 'text-zinc-600'
   const innerCard = isDark ? 'bg-zinc-800' : 'bg-zinc-50 border border-zinc-100'
-
-  if (!stats) return null
 
   const level = getLevel(stats.levelPercent)
   const catEntries = Object.entries(stats.byCategory).sort((a, b) => b[1] - a[1])
