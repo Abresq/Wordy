@@ -27,7 +27,7 @@ export default function Flashcards() {
 
   const allWords = useWords(user?.id)
 
-  useEffect(() => { loadDeck(allWords) }, [])
+  useEffect(() => { if (allWords.length > 0 && deck.length === 0) loadDeck(allWords) }, [allWords])
 
   function loadDeck(words = allWords) {
     if (!words.length) { setDeck([]); return }
