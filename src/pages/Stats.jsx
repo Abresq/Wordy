@@ -23,7 +23,7 @@ function getLevel(pct) {
 export default function Stats() {
   const { isDark } = useTheme()
   const { user } = useAuth()
-  const words = useWords(user?.id)
+  const [words] = useWords(user?.id)
   const userName = user?.user_metadata?.name
   const stats = getStats(words)
 
@@ -53,9 +53,9 @@ export default function Stats() {
     <div className="flex flex-col gap-4 p-4 pb-28 max-w-lg mx-auto">
       <div className="pt-6 pb-1">
         <div className="flex items-center gap-2">
-          <UserCircle size={22} className="text-violet-400" />
+          <UserCircle size={22} className="text-blue-500" />
           <h1 className={`text-2xl font-bold ${text}`}>
-            {userName ? `Hola, ${userName}` : 'Perfil'}
+            {userName ? `¡Hola, ${userName}!` : 'Perfil'}
           </h1>
         </div>
         <p className={`text-sm mt-1 ${subtext}`}>Tu progreso de aprendizaje</p>
@@ -105,7 +105,7 @@ export default function Stats() {
       {stats.total > 0 && (
         <div className={`rounded-2xl border p-4 ${card}`}>
           <div className="flex items-center gap-2 mb-4">
-            <TrendingUp size={16} className="text-violet-400" />
+            <TrendingUp size={16} className="text-blue-500" />
             <p className={`text-sm font-semibold ${muted}`}>Últimos 7 días</p>
           </div>
           <div className="flex items-end gap-1.5 h-20">
@@ -116,13 +116,13 @@ export default function Stats() {
                     className="w-full rounded-t-lg transition-all"
                     style={{
                       height: count === 0 ? '4px' : `${(count / maxDay) * 60}px`,
-                      backgroundColor: count === 0 ? (isDark ? '#27272a' : '#e4e4e7') : '#8b5cf6',
+                      backgroundColor: count === 0 ? (isDark ? '#27272a' : '#e4e4e7') : '#3b82f6',
                       minHeight: '4px',
                     }}
                   />
                 </div>
                 <span className={`text-[9px] font-medium ${subtext}`}>{day}</span>
-                {count > 0 && <span className={`text-[9px] font-bold text-violet-400`}>{count}</span>}
+                {count > 0 && <span className={`text-[9px] font-bold text-blue-500`}>{count}</span>}
               </div>
             ))}
           </div>
@@ -133,7 +133,7 @@ export default function Stats() {
       {catEntries.length > 0 && (
         <div className={`rounded-2xl border p-4 ${card}`}>
           <div className="flex items-center gap-2 mb-4">
-            <Award size={16} className="text-fuchsia-400" />
+            <Award size={16} className="text-blue-400" />
             <p className={`text-sm font-semibold ${muted}`}>Por categoría</p>
           </div>
           <div className="flex flex-col gap-3">

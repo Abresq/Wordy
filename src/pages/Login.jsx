@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Sparkles, Loader2, Mail, Lock, User } from 'lucide-react'
+import { Sparkles, Loader2, Mail, Lock, User, Sun, Moon, Languages } from 'lucide-react'
 import { useAuth } from '../auth.jsx'
 import { useTheme } from '../theme.jsx'
 
 export default function Login() {
   const { signIn, signUp } = useAuth()
-  const { isDark } = useTheme()
+  const { isDark, toggle } = useTheme()
   const [tab, setTab] = useState('login')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -44,13 +44,28 @@ export default function Login() {
   return (
     <div className={`min-h-svh flex flex-col items-center justify-center p-6 ${isDark ? 'bg-zinc-950' : 'bg-zinc-50'}`}>
       <div className="w-full max-w-sm">
+        {/* Theme toggle */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={toggle}
+            className={`p-2.5 rounded-xl border transition-colors ${isDark ? 'bg-zinc-800 border-zinc-700 text-yellow-400' : 'bg-white border-zinc-200 text-zinc-500'}`}
+          >
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        </div>
+
         {/* Logo */}
         <div className="text-center mb-8">
-          <span className="text-4xl font-black bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
+          <div className="flex justify-center mb-4">
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-200">
+              <Languages size={38} className="text-white" strokeWidth={1.8} />
+            </div>
+          </div>
+          <span className="text-4xl font-black bg-gradient-to-r from-blue-400 via-blue-500 to-blue-700 bg-clip-text text-transparent" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             Wordy
           </span>
           <div className="flex items-center justify-center gap-1.5 mt-1">
-            <Sparkles size={14} className="text-fuchsia-400" />
+            <Sparkles size={14} className="text-blue-400" />
             <p className={`text-sm ${subtext}`}>Tu vocabulario personal</p>
           </div>
         </div>
@@ -68,7 +83,7 @@ export default function Login() {
                 onClick={() => { setTab(key); setError('') }}
                 className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
                   tab === key
-                    ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-sm'
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-sm'
                     : subtext
                 }`}
               >
@@ -134,18 +149,16 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white disabled:opacity-50 flex items-center justify-center gap-2 mt-1"
+              className="py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-blue-500 to-blue-700 text-white disabled:opacity-50 flex items-center justify-center gap-2 mt-1"
             >
               {loading && <Loader2 size={15} className="animate-spin" />}
               {tab === 'login' ? 'Entrar' : 'Crear cuenta'}
             </button>
           </form>
 
-          {tab === 'register' && (
-            <p className={`text-xs text-center mt-4 ${subtext}`}>
-              Entras directo — no hace falta confirmar email.
-            </p>
-          )}
+          <p className={`text-xs text-center mt-4 ${subtext}`}>
+            Creado por Abraham Esquivel
+          </p>
         </div>
       </div>
     </div>

@@ -25,9 +25,10 @@ export default function Flashcards() {
   const [done, setDone] = useState(false)
   const [sessionResults, setSessionResults] = useState({ known: 0, learning: 0, unknown: 0 })
 
-  const allWords = useWords(user?.id)
+  const [allWords] = useWords(user?.id)
 
-  useEffect(() => { if (allWords.length > 0 && deck.length === 0) loadDeck(allWords) }, [allWords])
+  const deckLoaded = deck.length > 0 || done
+  useEffect(() => { if (allWords.length > 0 && !deckLoaded) loadDeck(allWords) }, [allWords, deckLoaded])
 
   function loadDeck(words = allWords) {
     if (!words.length) { setDeck([]); return }
@@ -66,6 +67,27 @@ export default function Flashcards() {
   if (done) {
     const total = sessionResults.known + sessionResults.learning + sessionResults.unknown
     const pctKnown = Math.round((sessionResults.known / total) * 100)
+
+    const slices = [
+      { key: 'known', color: '#22c55e', value: sessionResults.known },
+      { key: 'learning', color: '#f59e0b', value: sessionResults.learning },
+      { key: 'unknown', color: '#ef4444', value: sessionResults.unknown },
+    ]
+    const cx = 80, cy = 80, r = 70
+    let angle = -Math.PI / 2
+    const paths = slices.map(s => {
+      if (s.value === 0) return null
+      if (s.value === total) return { ...s, d: null, full: true }
+      const sweep = (s.value / total) * 2 * Math.PI
+      const x1 = cx + r * Math.cos(angle)
+      const y1 = cy + r * Math.sin(angle)
+      angle += sweep
+      const x2 = cx + r * Math.cos(angle)
+      const y2 = cy + r * Math.sin(angle)
+      const large = sweep > Math.PI ? 1 : 0
+      return { ...s, d: `M${cx},${cy} L${x1},${y1} A${r},${r},0,${large},1,${x2},${y2} Z` }
+    }).filter(Boolean)
+
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 gap-6 text-center max-w-sm mx-auto">
         <div>
@@ -73,6 +95,26 @@ export default function Flashcards() {
           <p className={`text-2xl font-bold ${text}`}>¡Sesión completada!</p>
           <p className={`text-sm mt-1 ${subtext}`}>{total} palabras repasadas · {pctKnown}% dominaste</p>
         </div>
+
+        <div className="relative flex items-center justify-center">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            {total > 0 && paths.map(s => (
+              s.full
+                ? <circle key={s.key} cx={cx} cy={cy} r={r} fill={s.color} />
+                : <path key={s.key} d={s.d} fill={s.color} />
+            ))}
+            <circle cx="80" cy="80" r="40" fill={isDark ? '#09090b' : '#ffffff'} />
+          </svg>
+          <div className="absolute flex flex-col items-center justify-center gap-0.5">
+            <span className="text-xl font-black leading-none" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: isDark ? '#fff' : '#18181b' }}>
+              {pctKnown}%
+            </span>
+            <span className="text-[9px] leading-none" style={{ color: isDark ? '#71717a' : '#a1a1aa' }}>
+              dominadas
+            </span>
+          </div>
+        </div>
+
         <div className="w-full grid grid-cols-3 gap-3">
           {[
             { key: 'known', label: 'Me la sé', color: '#22c55e', emoji: '✅' },
@@ -87,8 +129,8 @@ export default function Flashcards() {
           ))}
         </div>
         <button
-          onClick={loadDeck}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold text-sm"
+          onClick={() => loadDeck()}
+          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold text-sm"
         >
           <RotateCw size={16} /> Otra ronda
         </button>
@@ -105,14 +147,14 @@ export default function Flashcards() {
       <div className="pt-6 pb-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <GalleryHorizontal size={22} className="text-violet-400" />
+            <GalleryHorizontal size={22} className="text-blue-500" />
             <h1 className={`text-2xl font-bold ${text}`}>Flashcards</h1>
           </div>
           <span className={`text-sm font-medium ${subtext}`}>{index + 1} / {deck.length}</span>
         </div>
         <div className={`rounded-full h-2 mt-3 overflow-hidden ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
           <div
-            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-300"
+            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-700 transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>

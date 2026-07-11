@@ -28,12 +28,12 @@ function scoreGroup(score) {
 export default function Vocabulary() {
   const { isDark } = useTheme()
   const { user } = useAuth()
-  const words = useWords(user?.id)
+  const [words, setWords] = useWords(user?.id)
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('Todas')
   const [showFilter, setShowFilter] = useState(false)
 
-  function handleDelete(id) { deleteWord(id) }
+  function handleDelete(id) { deleteWord(id, setWords) }
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'
   const subtext = isDark ? 'text-zinc-500' : 'text-zinc-400'
@@ -54,7 +54,7 @@ export default function Vocabulary() {
     <div className="flex flex-col gap-4 p-4 pb-28 max-w-lg mx-auto">
       <div className="pt-6 pb-1">
         <div className="flex items-center gap-2">
-          <BookOpen size={22} className="text-violet-400" />
+          <BookOpen size={22} className="text-blue-500" />
           <h1 className={`text-2xl font-bold ${text}`}>Mi Vocabulario</h1>
         </div>
         <p className={`text-sm mt-1 ${subtext}`}>{words.length} palabras guardadas</p>
@@ -94,7 +94,7 @@ export default function Vocabulary() {
           onClick={() => setShowFilter(!showFilter)}
           className={`p-2.5 rounded-xl border transition-colors ${
             showFilter
-              ? 'bg-violet-600 border-violet-500 text-white'
+              ? 'bg-blue-600 border-blue-500 text-white'
               : isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-400' : 'bg-white border-zinc-200 text-zinc-400'
           }`}
         >

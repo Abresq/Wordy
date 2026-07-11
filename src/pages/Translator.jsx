@@ -17,7 +17,7 @@ const CATEGORY_COLORS = {
 export default function Translator() {
   const { isDark, toggle } = useTheme()
   const { user, signOut } = useAuth()
-  const words = useWords(user?.id)
+  const [words] = useWords(user?.id)
   const [text, setText] = useState('')
   const [fromLang, setFromLang] = useState('de')
   const [toLang, setToLang] = useState('es')
@@ -56,8 +56,9 @@ export default function Translator() {
 
   async function handleSave() {
     if (!result) return
+    const original = result.correctedInput?.trim() || text.trim()
     await saveWord({
-      original: text.trim(),
+      original,
       translation: result.translation,
       fromLang,
       toLang,
@@ -89,10 +90,10 @@ export default function Translator() {
       <div className="pt-6 pb-1 flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-3xl font-black bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="text-3xl font-black bg-gradient-to-r from-blue-400 via-blue-500 to-blue-700 bg-clip-text text-transparent" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               Wordy
             </span>
-            <Sparkles size={18} className="text-fuchsia-400" />
+            <Sparkles size={18} className="text-blue-400" />
           </div>
           <p className={`text-xs mt-0.5 ${subtext}`}>Tu vocabulario personal</p>
         </div>
@@ -171,7 +172,7 @@ export default function Translator() {
           <button
             onClick={handleTranslate}
             disabled={loading || !text.trim()}
-            className="px-5 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white disabled:opacity-40 hover:opacity-90 transition-opacity flex items-center gap-2"
+            className="px-5 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-700 text-white disabled:opacity-40 hover:opacity-90 transition-opacity flex items-center gap-2"
           >
             {loading ? <Loader2 size={15} className="animate-spin" /> : <Zap size={15} />}
             Traducir

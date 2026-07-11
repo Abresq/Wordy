@@ -1,35 +1,36 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from './supabase'
 
 export function useWords(userId) {
   const [words, setWords] = useState([])
 
-  useEffect(() => {
-    if (!userId) { setWords([]); return }
-
+  const refetch = useCallback(() => {
+    if (!userId) return
     supabase
       .from('words')
       .select('*')
       .eq('user_id', userId)
+      .neq('hidden', true)
       .order('added_at', { ascending: false })
       .then(({ data }) => setWords(data || []))
+  }, [userId])
+
+  useEffect(() => {
+    if (!userId) { setWords([]); return }
+
+    refetch()
 
     const channel = supabase
-      .channel('words-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'words', filter: `user_id=eq.${userId}` }, () => {
-        supabase
-          .from('words')
-          .select('*')
-          .eq('user_id', userId)
-          .order('added_at', { ascending: false })
-          .then(({ data }) => setWords(data || []))
-      })
+      .channel('words-changes-' + userId)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'words' }, refetch)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'words' }, refetch)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'words' }, refetch)
       .subscribe()
 
     return () => supabase.removeChannel(channel)
-  }, [userId])
+  }, [userId, refetch])
 
-  return words
+  return [words, setWords]
 }
 
 export async function saveWord(word, userId) {
@@ -39,7 +40,7 @@ export async function saveWord(word, userId) {
     .eq('user_id', userId)
     .eq('original', word.original)
     .eq('from_lang', word.fromLang)
-    .maybeSingle()
+    .maybeSingle() // busca aunque esté oculta
 
   if (existing) {
     await supabase.from('words').update({
@@ -50,6 +51,7 @@ export async function saveWord(word, userId) {
       example_translation: word.exampleTranslation,
       type: word.type,
       updated_at: new Date().toISOString(),
+      hidden: false,
     }).eq('id', existing.id)
   } else {
     await supabase.from('words').insert({
@@ -78,8 +80,9 @@ export async function updateWordScore(id, delta) {
   }).eq('id', id)
 }
 
-export async function deleteWord(id) {
-  await supabase.from('words').delete().eq('id', id)
+export async function deleteWord(id, setWords) {
+  setWords(prev => prev.filter(w => w.id !== id))
+  await supabase.from('words').update({ hidden: true }).eq('id', id)
 }
 
 export function getStats(words) {
