@@ -1,6 +1,7 @@
 import { BarChart2, TrendingUp, Award } from 'lucide-react'
 import { useWords, getStats } from '../store'
 import { useTheme } from '../theme.jsx'
+import { useAuth } from '../auth.jsx'
 
 const CATEGORY_COLORS = {
   'General': '#6366f1', 'Comida': '#f97316', 'Viajes': '#0ea5e9',
@@ -21,7 +22,8 @@ function getLevel(pct) {
 
 export default function Stats() {
   const { isDark } = useTheme()
-  const words = useWords()
+  const { user } = useAuth()
+  const words = useWords(user?.id)
   const stats = getStats(words)
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'
@@ -41,7 +43,7 @@ export default function Stats() {
     const dateStr = d.toDateString()
     return {
       day: d.toLocaleDateString('es', { weekday: 'short' }),
-      count: words.filter(w => new Date(w.addedAt).toDateString() === dateStr).length,
+      count: words.filter(w => new Date(w.added_at).toDateString() === dateStr).length,
     }
   })
   const maxDay = Math.max(...last7.map(d => d.count), 1)

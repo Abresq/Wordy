@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Search, Trash2, Filter, BookOpen } from 'lucide-react'
 import { useWords, deleteWord } from '../store'
 import { useTheme } from '../theme.jsx'
+import { useAuth } from '../auth.jsx'
 
 const CATEGORY_COLORS = {
   'General': '#6366f1', 'Comida': '#f97316', 'Viajes': '#0ea5e9',
@@ -26,7 +27,8 @@ function scoreGroup(score) {
 
 export default function Vocabulary() {
   const { isDark } = useTheme()
-  const words = useWords()
+  const { user } = useAuth()
+  const words = useWords(user?.id)
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('Todas')
   const [showFilter, setShowFilter] = useState(false)
@@ -155,8 +157,8 @@ export default function Vocabulary() {
                       <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: status.color + '20', color: status.color }}>
                         {status.label}
                       </span>
-                      {word.reviewCount > 0 && (
-                        <span className={`text-xs ${subtext}`}>{word.reviewCount} repasos</span>
+                      {word.review_count > 0 && (
+                        <span className={`text-xs ${subtext}`}>{word.review_count} repasos</span>
                       )}
                     </div>
                   </div>

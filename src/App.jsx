@@ -1,10 +1,12 @@
-import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { Languages, BookOpen, BarChart2, GalleryHorizontal } from 'lucide-react'
 import { ThemeProvider, useTheme } from './theme.jsx'
+import { AuthProvider, useAuth } from './auth.jsx'
 import Translator from './pages/Translator'
 import Vocabulary from './pages/Vocabulary'
 import Stats from './pages/Stats'
 import Flashcards from './pages/Flashcards'
+import Login from './pages/Login'
 
 const NAV = [
   { to: '/', icon: Languages, label: 'Traducir' },
@@ -46,25 +48,40 @@ function BottomNav() {
 }
 
 function AppInner() {
+  const { user, loading } = useAuth()
+
+  if (loading) return null
+
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="*" element={<Login />} />
+      </Routes>
+    )
+  }
+
   return (
-    <BrowserRouter>
-      <div className="min-h-svh max-w-lg mx-auto relative">
-        <Routes>
-          <Route path="/" element={<Translator />} />
-          <Route path="/vocab" element={<Vocabulary />} />
-          <Route path="/flashcards" element={<Flashcards />} />
-          <Route path="/stats" element={<Stats />} />
-        </Routes>
-        <BottomNav />
-      </div>
-    </BrowserRouter>
+    <div className="min-h-svh max-w-lg mx-auto relative">
+      <Routes>
+        <Route path="/" element={<Translator />} />
+        <Route path="/vocab" element={<Vocabulary />} />
+        <Route path="/flashcards" element={<Flashcards />} />
+        <Route path="/stats" element={<Stats />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <BottomNav />
+    </div>
   )
 }
 
 export default function App() {
   return (
     <ThemeProvider>
-      <AppInner />
+      <AuthProvider>
+        <BrowserRouter>
+          <AppInner />
+        </BrowserRouter>
+      </AuthProvider>
     </ThemeProvider>
   )
 }

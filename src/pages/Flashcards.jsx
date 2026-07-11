@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { RotateCw, ThumbsUp, Minus, ThumbsDown, CheckCircle2, GalleryHorizontal } from 'lucide-react'
 import { useWords, updateWordScore } from '../store'
 import { useTheme } from '../theme.jsx'
+import { useAuth } from '../auth.jsx'
 
 const CATEGORY_COLORS = {
   'General': '#6366f1', 'Comida': '#f97316', 'Viajes': '#0ea5e9',
@@ -17,13 +18,14 @@ function smartSort(words) { return shuffle(words).sort((a, b) => (a.score || 0) 
 
 export default function Flashcards() {
   const { isDark } = useTheme()
+  const { user } = useAuth()
   const [deck, setDeck] = useState([])
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [done, setDone] = useState(false)
   const [sessionResults, setSessionResults] = useState({ known: 0, learning: 0, unknown: 0 })
 
-  const allWords = useWords()
+  const allWords = useWords(user?.id)
 
   useEffect(() => { loadDeck(allWords) }, [])
 
@@ -145,7 +147,7 @@ export default function Flashcards() {
           {!flipped ? (
             <>
               <p className={`text-4xl font-bold text-center ${text}`}>{cardData.original}</p>
-              <p className={`text-xs uppercase tracking-wider ${subtext}`}>{cardData.fromLang} → {cardData.toLang}</p>
+              <p className={`text-xs uppercase tracking-wider ${subtext}`}>{cardData.from_lang} → {cardData.to_lang}</p>
               <div className={`mt-2 px-4 py-2 rounded-full text-xs ${isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-zinc-100 text-zinc-400'}`}>
                 Toca para ver la traducción
               </div>
@@ -157,8 +159,8 @@ export default function Flashcards() {
               {cardData.example && (
                 <div className={`rounded-xl p-3 w-full mt-1 ${innerCard}`}>
                   <p className={`text-xs italic text-center ${muted}`}>"{cardData.example}"</p>
-                  {cardData.exampleTranslation && (
-                    <p className={`text-xs text-center mt-1 ${subtext}`}>"{cardData.exampleTranslation}"</p>
+                  {cardData.example_translation && (
+                    <p className={`text-xs text-center mt-1 ${subtext}`}>"{cardData.example_translation}"</p>
                   )}
                 </div>
               )}

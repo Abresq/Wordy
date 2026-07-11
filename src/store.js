@@ -1,58 +1,85 @@
 import { useState, useEffect } from 'react'
+import { supabase } from './supabase'
 
-const STORAGE_KEY = 'wordy_words'
-const EVENT = 'wordy:update'
+export function useWords(userId) {
+  const [words, setWords] = useState([])
 
-function read() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
-}
-
-function write(words) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(words))
-  window.dispatchEvent(new CustomEvent(EVENT))
-}
-
-export function useWords() {
-  const [words, setWords] = useState(read)
   useEffect(() => {
-    const sync = () => setWords(read())
-    window.addEventListener(EVENT, sync)
-    return () => window.removeEventListener(EVENT, sync)
-  }, [])
+    if (!userId) { setWords([]); return }
+
+    supabase
+      .from('words')
+      .select('*')
+      .eq('user_id', userId)
+      .order('added_at', { ascending: false })
+      .then(({ data }) => setWords(data || []))
+
+    const channel = supabase
+      .channel('words-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'words', filter: `user_id=eq.${userId}` }, () => {
+        supabase
+          .from('words')
+          .select('*')
+          .eq('user_id', userId)
+          .order('added_at', { ascending: false })
+          .then(({ data }) => setWords(data || []))
+      })
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [userId])
+
   return words
 }
 
-export function getWords() {
-  return read()
-}
+export async function saveWord(word, userId) {
+  const { data: existing } = await supabase
+    .from('words')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('original', word.original)
+    .eq('from_lang', word.fromLang)
+    .maybeSingle()
 
-export function saveWord(word) {
-  const words = read()
-  const i = words.findIndex(w =>
-    w.original.toLowerCase() === word.original.toLowerCase() &&
-    w.fromLang === word.fromLang
-  )
-  if (i >= 0) {
-    words[i] = { ...words[i], ...word, updatedAt: Date.now() }
+  if (existing) {
+    await supabase.from('words').update({
+      translation: word.translation,
+      to_lang: word.toLang,
+      category: word.category,
+      example: word.example,
+      example_translation: word.exampleTranslation,
+      type: word.type,
+      updated_at: new Date().toISOString(),
+    }).eq('id', existing.id)
   } else {
-    words.unshift({ ...word, id: Date.now(), addedAt: Date.now(), score: 0, reviewCount: 0 })
+    await supabase.from('words').insert({
+      user_id: userId,
+      original: word.original,
+      translation: word.translation,
+      from_lang: word.fromLang,
+      to_lang: word.toLang,
+      category: word.category,
+      example: word.example,
+      example_translation: word.exampleTranslation,
+      type: word.type,
+      score: 0,
+      review_count: 0,
+    })
   }
-  write(words)
 }
 
-export function updateWordScore(id, delta) {
-  const words = read()
-  const w = words.find(w => w.id === id)
-  if (w) {
-    w.score = Math.max(-10, Math.min(10, (w.score || 0) + delta))
-    w.reviewCount = (w.reviewCount || 0) + 1
-    w.lastReviewed = Date.now()
-  }
-  write(words)
+export async function updateWordScore(id, delta) {
+  const { data: w } = await supabase.from('words').select('score, review_count').eq('id', id).single()
+  if (!w) return
+  await supabase.from('words').update({
+    score: Math.max(-10, Math.min(10, (w.score || 0) + delta)),
+    review_count: (w.review_count || 0) + 1,
+    last_reviewed: new Date().toISOString(),
+  }).eq('id', id)
 }
 
-export function deleteWord(id) {
-  write(read().filter(w => w.id !== id))
+export async function deleteWord(id) {
+  await supabase.from('words').delete().eq('id', id)
 }
 
 export function getStats(words) {

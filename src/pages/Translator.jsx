@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { ArrowLeftRight, Loader2, BookmarkPlus, Check, Sparkles, Sun, Moon, Zap } from 'lucide-react'
+import { ArrowLeftRight, Loader2, BookmarkPlus, Check, Sparkles, Sun, Moon, Zap, LogOut } from 'lucide-react'
 import { LANGUAGES, translateAndAnalyze } from '../api'
 import { saveWord, useWords } from '../store'
 import { useTheme } from '../theme.jsx'
+import { useAuth } from '../auth.jsx'
 
 const CATEGORY_COLORS = {
   'General': '#6366f1', 'Comida': '#f97316', 'Viajes': '#0ea5e9',
@@ -15,7 +16,8 @@ const CATEGORY_COLORS = {
 
 export default function Translator() {
   const { isDark, toggle } = useTheme()
-  const words = useWords()
+  const { user, signOut } = useAuth()
+  const words = useWords(user?.id)
   const [text, setText] = useState('')
   const [fromLang, setFromLang] = useState('de')
   const [toLang, setToLang] = useState('es')
@@ -52,9 +54,9 @@ export default function Translator() {
     }
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!result) return
-    saveWord({
+    await saveWord({
       original: text.trim(),
       translation: result.translation,
       fromLang,
@@ -63,7 +65,7 @@ export default function Translator() {
       example: result.example,
       exampleTranslation: result.exampleTranslation,
       type: result.type,
-    })
+    }, user.id)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -78,7 +80,7 @@ export default function Translator() {
   const catColor = result ? (CATEGORY_COLORS[result.category] || '#6366f1') : '#6366f1'
   const today = new Date().toDateString()
   const recentWords = words.slice(0, 5)
-  const todayCount = words.filter(w => new Date(w.addedAt).toDateString() === today).length
+  const todayCount = words.filter(w => new Date(w.added_at).toDateString() === today).length
   const dominatedCount = words.filter(w => (w.score || 0) >= 3).length
 
   return (
@@ -94,12 +96,21 @@ export default function Translator() {
           </div>
           <p className={`text-xs mt-0.5 ${subtext}`}>Tu vocabulario personal</p>
         </div>
-        <button
-          onClick={toggle}
-          className={`p-2.5 rounded-xl border transition-colors ${isDark ? 'bg-zinc-800 border-zinc-700 text-yellow-400' : 'bg-zinc-100 border-zinc-200 text-zinc-500'}`}
-        >
-          {isDark ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggle}
+            className={`p-2.5 rounded-xl border transition-colors ${isDark ? 'bg-zinc-800 border-zinc-700 text-yellow-400' : 'bg-zinc-100 border-zinc-200 text-zinc-500'}`}
+          >
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          <button
+            onClick={signOut}
+            className={`p-2.5 rounded-xl border transition-colors ${isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-400' : 'bg-zinc-100 border-zinc-200 text-zinc-500'}`}
+            title="Cerrar sesión"
+          >
+            <LogOut size={18} />
+          </button>
+        </div>
       </div>
 
       {/* Quick stats bar */}
@@ -226,7 +237,7 @@ export default function Translator() {
                 <div
                   key={w.id}
                   className={`flex items-center justify-between rounded-xl border px-4 py-3 cursor-pointer ${card}`}
-                  onClick={() => { setText(w.original); setFromLang(w.fromLang); setToLang(w.toLang); setResult(null) }}
+                  onClick={() => { setText(w.original); setFromLang(w.from_lang); setToLang(w.to_lang); setResult(null) }}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
