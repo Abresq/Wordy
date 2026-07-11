@@ -1,4 +1,4 @@
-import { BarChart2, TrendingUp, Award } from 'lucide-react'
+import { BarChart2, TrendingUp, Award, UserCircle } from 'lucide-react'
 import { useWords, getStats } from '../store'
 import { useTheme } from '../theme.jsx'
 import { useAuth } from '../auth.jsx'
@@ -24,6 +24,7 @@ export default function Stats() {
   const { isDark } = useTheme()
   const { user } = useAuth()
   const words = useWords(user?.id)
+  const userName = user?.user_metadata?.name
   const stats = getStats(words)
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'
@@ -52,8 +53,10 @@ export default function Stats() {
     <div className="flex flex-col gap-4 p-4 pb-28 max-w-lg mx-auto">
       <div className="pt-6 pb-1">
         <div className="flex items-center gap-2">
-          <BarChart2 size={22} className="text-violet-400" />
-          <h1 className={`text-2xl font-bold ${text}`}>Estadísticas</h1>
+          <UserCircle size={22} className="text-violet-400" />
+          <h1 className={`text-2xl font-bold ${text}`}>
+            {userName ? `Hola, ${userName}` : 'Perfil'}
+          </h1>
         </div>
         <p className={`text-sm mt-1 ${subtext}`}>Tu progreso de aprendizaje</p>
       </div>

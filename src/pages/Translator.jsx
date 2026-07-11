@@ -242,7 +242,7 @@ export default function Translator() {
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
                     <div className="flex flex-col">
-                      <span className={`text-base font-semibold ${isDark ? 'text-white' : 'text-zinc-800'}`}>{w.translation}</span>
+                      <span className={`text-lg font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{w.translation}</span>
                       <span className={`text-xs ${subtext}`}>{w.original}</span>
                     </div>
                   </div>

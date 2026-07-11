@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Sparkles, Loader2, Mail, Lock } from 'lucide-react'
+import { Sparkles, Loader2, Mail, Lock, User } from 'lucide-react'
 import { useAuth } from '../auth.jsx'
 import { useTheme } from '../theme.jsx'
 
@@ -7,6 +7,7 @@ export default function Login() {
   const { signIn, signUp } = useAuth()
   const { isDark } = useTheme()
   const [tab, setTab] = useState('login')
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -27,7 +28,7 @@ export default function Login() {
       if (tab === 'login') {
         await signIn(email, password)
       } else {
-        await signUp(email, password)
+        await signUp(email, password, name)
       }
     } catch (err) {
       const msg = err.message || 'Error desconocido'
@@ -77,6 +78,22 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {tab === 'register' && (
+              <div className="flex flex-col gap-1.5">
+                <label className={`text-xs font-medium uppercase tracking-wide ${subtext}`}>Nombre</label>
+                <div className={`flex items-center gap-2 border rounded-xl px-3 py-3 ${inputCls}`}>
+                  <User size={15} className={subtext} />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="¿Cómo te llamas?"
+                    required
+                    className="flex-1 bg-transparent text-sm outline-none"
+                  />
+                </div>
+              </div>
+            )}
             <div className="flex flex-col gap-1.5">
               <label className={`text-xs font-medium uppercase tracking-wide ${subtext}`}>Email</label>
               <div className={`flex items-center gap-2 border rounded-xl px-3 py-3 ${inputCls}`}>

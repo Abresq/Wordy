@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import { Languages, BookOpen, BarChart2, GalleryHorizontal } from 'lucide-react'
+import { Languages, BookOpen, UserCircle, GalleryHorizontal } from 'lucide-react'
 import { ThemeProvider, useTheme } from './theme.jsx'
 import { AuthProvider, useAuth } from './auth.jsx'
 import Translator from './pages/Translator'
@@ -12,7 +12,7 @@ const NAV = [
   { to: '/', icon: Languages, label: 'Traducir' },
   { to: '/vocab', icon: BookOpen, label: 'Vocab' },
   { to: '/flashcards', icon: GalleryHorizontal, label: 'Estudio' },
-  { to: '/stats', icon: BarChart2, label: 'Stats' },
+  { to: '/stats', icon: UserCircle, label: 'Perfil' },
 ]
 
 function BottomNav() {

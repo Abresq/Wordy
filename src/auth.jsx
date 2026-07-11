@@ -23,8 +23,8 @@ export function AuthProvider({ children }) {
     if (error) throw error
   }
 
-  async function signUp(email, password) {
-    const { error } = await supabase.auth.signUp({ email, password })
+  async function signUp(email, password, name) {
+    const { error } = await supabase.auth.signUp({ email, password, options: { data: { name } } })
     if (error) throw error
   }
 
