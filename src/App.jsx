@@ -31,7 +31,7 @@ function BottomNav() {
           end={to === '/'}
           className={({ isActive }) =>
             `flex flex-col items-center gap-1 py-3 px-4 rounded-xl transition-colors ${
-              isActive ? 'text-blue-500' : isDark ? 'text-zinc-600' : 'text-zinc-400'
+              isActive ? 'text-blue-600' : isDark ? 'text-zinc-600' : 'text-zinc-400'
             }`
           }
         >

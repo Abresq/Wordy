@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeftRight, Loader2, BookmarkPlus, Check, Sparkles, Sun, Moon, Zap, LogOut } from 'lucide-react'
+import { ArrowLeftRight, Loader2, BookmarkPlus, Check, Sun, Moon, Zap } from 'lucide-react'
 import { LANGUAGES, translateAndAnalyze } from '../api'
 import { saveWord, useWords } from '../store'
 import { useTheme } from '../theme.jsx'
@@ -90,10 +90,10 @@ export default function Translator() {
       <div className="pt-6 pb-1 flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-3xl font-black bg-gradient-to-r from-blue-400 via-blue-500 to-blue-700 bg-clip-text text-transparent" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <img src="/WORDY ICON.png" alt="Wordy" className="w-8 h-8 rounded-xl" />
+            <span className="text-3xl font-black bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent" style={{ fontFamily: "'Nunito', sans-serif" }}>
               Wordy
             </span>
-            <Sparkles size={18} className="text-blue-400" />
           </div>
           <p className={`text-xs mt-0.5 ${subtext}`}>Tu vocabulario personal</p>
         </div>
@@ -103,13 +103,6 @@ export default function Translator() {
             className={`p-2.5 rounded-xl border transition-colors ${isDark ? 'bg-zinc-800 border-zinc-700 text-yellow-400' : 'bg-zinc-100 border-zinc-200 text-zinc-500'}`}
           >
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-          <button
-            onClick={signOut}
-            className={`p-2.5 rounded-xl border transition-colors ${isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-400' : 'bg-zinc-100 border-zinc-200 text-zinc-500'}`}
-            title="Cerrar sesión"
-          >
-            <LogOut size={18} />
           </button>
         </div>
       </div>
@@ -172,7 +165,7 @@ export default function Translator() {
           <button
             onClick={handleTranslate}
             disabled={loading || !text.trim()}
-            className="px-5 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-700 text-white disabled:opacity-40 hover:opacity-90 transition-opacity flex items-center gap-2"
+            className="px-5 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-600 to-teal-500 text-white disabled:opacity-40 hover:opacity-90 transition-opacity flex items-center gap-2"
           >
             {loading ? <Loader2 size={15} className="animate-spin" /> : <Zap size={15} />}
             Traducir

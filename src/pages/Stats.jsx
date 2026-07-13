@@ -1,4 +1,5 @@
-import { BarChart2, TrendingUp, Award, UserCircle } from 'lucide-react'
+import { useState } from 'react'
+import { BarChart2, TrendingUp, Award, UserCircle, LogOut } from 'lucide-react'
 import { useWords, getStats } from '../store'
 import { useTheme } from '../theme.jsx'
 import { useAuth } from '../auth.jsx'
@@ -22,7 +23,8 @@ function getLevel(pct) {
 
 export default function Stats() {
   const { isDark } = useTheme()
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
+  const [showConfirm, setShowConfirm] = useState(false)
   const [words] = useWords(user?.id)
   const userName = user?.user_metadata?.name
   const stats = getStats(words)
@@ -53,7 +55,7 @@ export default function Stats() {
     <div className="flex flex-col gap-4 p-4 pb-28 max-w-lg mx-auto">
       <div className="pt-6 pb-1">
         <div className="flex items-center gap-2">
-          <UserCircle size={22} className="text-blue-500" />
+          <UserCircle size={22} className="text-blue-600" />
           <h1 className={`text-2xl font-bold ${text}`}>
             {userName ? `¡Hola, ${userName}!` : 'Perfil'}
           </h1>
@@ -105,7 +107,7 @@ export default function Stats() {
       {stats.total > 0 && (
         <div className={`rounded-2xl border p-4 ${card}`}>
           <div className="flex items-center gap-2 mb-4">
-            <TrendingUp size={16} className="text-blue-500" />
+            <TrendingUp size={16} className="text-blue-600" />
             <p className={`text-sm font-semibold ${muted}`}>Últimos 7 días</p>
           </div>
           <div className="flex items-end gap-1.5 h-20">
@@ -116,13 +118,13 @@ export default function Stats() {
                     className="w-full rounded-t-lg transition-all"
                     style={{
                       height: count === 0 ? '4px' : `${(count / maxDay) * 60}px`,
-                      backgroundColor: count === 0 ? (isDark ? '#27272a' : '#e4e4e7') : '#3b82f6',
+                      backgroundColor: count === 0 ? (isDark ? '#27272a' : '#e4e4e7') : '#2563eb',
                       minHeight: '4px',
                     }}
                   />
                 </div>
                 <span className={`text-[9px] font-medium ${subtext}`}>{day}</span>
-                {count > 0 && <span className={`text-[9px] font-bold text-blue-500`}>{count}</span>}
+                {count > 0 && <span className={`text-[9px] font-bold text-blue-600`}>{count}</span>}
               </div>
             ))}
           </div>
@@ -133,7 +135,7 @@ export default function Stats() {
       {catEntries.length > 0 && (
         <div className={`rounded-2xl border p-4 ${card}`}>
           <div className="flex items-center gap-2 mb-4">
-            <Award size={16} className="text-blue-400" />
+            <Award size={16} className="text-teal-500" />
             <p className={`text-sm font-semibold ${muted}`}>Por categoría</p>
           </div>
           <div className="flex flex-col gap-3">
@@ -168,6 +170,45 @@ export default function Stats() {
         <div className="text-center py-10">
           <p className="text-5xl mb-3">📊</p>
           <p className={`text-sm ${subtext}`}>Traduce y guarda palabras<br />para ver tus estadísticas</p>
+        </div>
+      )}
+
+      {/* Sign out */}
+      <div className="flex justify-center pb-4">
+        <button
+          onClick={() => setShowConfirm(true)}
+          className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors ${isDark ? 'text-zinc-600 hover:text-zinc-400' : 'text-zinc-400 hover:text-zinc-500'}`}
+        >
+          <LogOut size={13} />
+          Cerrar sesión
+        </button>
+      </div>
+
+      {/* Confirm dialog */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+          <div className={`w-full max-w-xs rounded-2xl border p-6 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-xl'}`}>
+            <p className={`text-base font-semibold mb-1 ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+              ¿Cerrar sesión?
+            </p>
+            <p className={`text-sm mb-5 ${subtext}`}>
+              Tu progreso está guardado en la nube.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${isDark ? 'border-zinc-700 text-zinc-300 hover:bg-zinc-800' : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={signOut}
+                className="flex-1 py-2 rounded-xl text-sm font-medium bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+              >
+                Salir
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

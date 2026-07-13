@@ -14,8 +14,8 @@ export default defineConfig({
         name: 'Wordy',
         short_name: 'Wordy',
         description: 'Tu vocabulario personal con flashcards',
-        theme_color: '#a855f7',
-        background_color: '#09090b',
+        theme_color: '#2563eb',
+        background_color: '#0d1b3e',
         display: 'standalone',
         start_url: '/',
         icons: [

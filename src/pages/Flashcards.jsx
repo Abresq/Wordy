@@ -130,7 +130,7 @@ export default function Flashcards() {
         </div>
         <button
           onClick={() => loadDeck()}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold text-sm"
+          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold text-sm"
         >
           <RotateCw size={16} /> Otra ronda
         </button>
@@ -147,14 +147,14 @@ export default function Flashcards() {
       <div className="pt-6 pb-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <GalleryHorizontal size={22} className="text-blue-500" />
+            <GalleryHorizontal size={22} className="text-blue-600" />
             <h1 className={`text-2xl font-bold ${text}`}>Flashcards</h1>
           </div>
           <span className={`text-sm font-medium ${subtext}`}>{index + 1} / {deck.length}</span>
         </div>
         <div className={`rounded-full h-2 mt-3 overflow-hidden ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
           <div
-            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-700 transition-all duration-300"
+            className="h-full rounded-full bg-gradient-to-r from-blue-600 to-teal-500 transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>

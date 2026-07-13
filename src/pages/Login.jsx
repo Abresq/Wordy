@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Sparkles, Loader2, Mail, Lock, User, Sun, Moon, Languages } from 'lucide-react'
+import { Loader2, Mail, Lock, User, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../auth.jsx'
 import { useTheme } from '../theme.jsx'
 
@@ -18,7 +18,6 @@ export default function Login() {
     ? 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500'
     : 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400'
   const subtext = isDark ? 'text-zinc-500' : 'text-zinc-400'
-  const text = isDark ? 'text-white' : 'text-zinc-900'
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -42,7 +41,7 @@ export default function Login() {
   }
 
   return (
-    <div className={`min-h-svh flex flex-col items-center justify-center p-6 ${isDark ? 'bg-zinc-950' : 'bg-zinc-50'}`}>
+    <div className={`min-h-svh flex flex-col items-center justify-center p-6 ${isDark ? 'bg-[#0f0f13]' : 'bg-slate-50'}`}>
       <div className="w-full max-w-sm">
         {/* Theme toggle */}
         <div className="flex justify-end mb-4">
@@ -57,23 +56,25 @@ export default function Login() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-200">
-              <Languages size={38} className="text-white" strokeWidth={1.8} />
-            </div>
+            <img
+              src="/WORDY ICON.png"
+              alt="Wordy"
+              className="w-24 h-24"
+            />
           </div>
-          <span className="text-4xl font-black bg-gradient-to-r from-blue-400 via-blue-500 to-blue-700 bg-clip-text text-transparent" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <span
+            className="text-4xl font-black bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
             Wordy
           </span>
-          <div className="flex items-center justify-center gap-1.5 mt-1">
-            <Sparkles size={14} className="text-blue-400" />
-            <p className={`text-sm ${subtext}`}>Tu vocabulario personal</p>
-          </div>
+          <p className={`text-sm mt-1 ${subtext}`}>Tu vocabulario personal</p>
         </div>
 
         {/* Card */}
         <div className={`rounded-3xl border p-6 ${card}`}>
           {/* Tabs */}
-          <div className={`flex rounded-xl p-1 mb-6 ${isDark ? 'bg-zinc-800' : 'bg-zinc-100'}`}>
+          <div className={`flex rounded-xl p-1 mb-6 ${isDark ? 'bg-zinc-800' : 'bg-slate-100'}`}>
             {[
               { key: 'login', label: 'Iniciar sesión' },
               { key: 'register', label: 'Crear cuenta' },
@@ -83,7 +84,7 @@ export default function Login() {
                 onClick={() => { setTab(key); setError('') }}
                 className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
                   tab === key
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-sm'
+                    ? 'bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-sm'
                     : subtext
                 }`}
               >
@@ -149,7 +150,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-blue-500 to-blue-700 text-white disabled:opacity-50 flex items-center justify-center gap-2 mt-1"
+              className="py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-blue-600 to-teal-500 text-white disabled:opacity-50 flex items-center justify-center gap-2 mt-1"
             >
               {loading && <Loader2 size={15} className="animate-spin" />}
               {tab === 'login' ? 'Entrar' : 'Crear cuenta'}
