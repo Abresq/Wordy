@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BarChart2, TrendingUp, Award, UserCircle, LogOut } from 'lucide-react'
+import { BarChart2, TrendingUp, Award, UserCircle, LogOut, X } from 'lucide-react'
 import { useWords, getStats } from '../store'
 import { useTheme } from '../theme.jsx'
 import { useAuth } from '../auth.jsx'
@@ -25,7 +25,8 @@ export default function Stats() {
   const { isDark } = useTheme()
   const { user, signOut } = useAuth()
   const [showConfirm, setShowConfirm] = useState(false)
-  const [words] = useWords(user?.id)
+  const [wordModal, setWordModal] = useState(null) // 'known' | 'learning' | 'new'
+  const [words] = useWords()
   const userName = user?.user_metadata?.name
   const stats = getStats(words)
 
@@ -95,13 +96,63 @@ export default function Stats() {
           { key: 'learning', label: 'Aprendiendo', color: '#f59e0b', emoji: '📖' },
           { key: 'new', label: 'Sin repasar', color: '#6366f1', emoji: '💤' },
         ].map(({ key, label, color, emoji }) => (
-          <div key={key} className={`rounded-2xl border p-3 text-center ${card}`}>
+          <button
+            key={key}
+            onClick={() => stats.scoreGroups[key] > 0 && setWordModal(key)}
+            className={`rounded-2xl border p-3 text-center transition-all active:scale-95 ${card} ${stats.scoreGroups[key] > 0 ? 'cursor-pointer' : 'cursor-default'}`}
+          >
             <p className="text-xl">{emoji}</p>
             <p className="text-2xl font-bold mt-1" style={{ color }}>{stats.scoreGroups[key]}</p>
             <p className={`text-[10px] mt-0.5 ${subtext}`}>{label}</p>
-          </div>
+          </button>
         ))}
       </div>
+
+      {/* Word list modal */}
+      {wordModal && (() => {
+        const configs = {
+          known:    { label: 'Dominadas', color: '#22c55e', emoji: '✅', filter: w => (w.score || 0) >= 3 },
+          learning: { label: 'Aprendiendo', color: '#f59e0b', emoji: '📖', filter: w => (w.score || 0) >= 0 && (w.score || 0) < 3 },
+          new:      { label: 'Sin repasar', color: '#6366f1', emoji: '💤', filter: w => (w.score || 0) < 0 },
+        }
+        const { label, color, emoji, filter } = configs[wordModal]
+        const filtered = words.filter(filter)
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setWordModal(null)}>
+            <div
+              className={`w-full max-w-lg rounded-3xl border p-5 max-h-[75vh] flex flex-col ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-xl'}`}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{emoji}</span>
+                  <p className="font-semibold text-base" style={{ color }}>{label}</p>
+                  <span className={`text-sm ${subtext}`}>· {filtered.length}</span>
+                </div>
+                <button onClick={() => setWordModal(null)} className={`p-1.5 rounded-lg ${isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600'}`}>
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="overflow-y-auto flex flex-col gap-2">
+                {filtered.map(w => {
+                  const catColor = CATEGORY_COLORS[w.category] || '#6366f1'
+                  return (
+                    <div key={w.id} className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border ${isDark ? 'border-zinc-800 bg-zinc-800/50' : 'border-zinc-100 bg-zinc-50'}`}>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-semibold truncate ${text}`}>{w.original}</p>
+                        <p className={`text-xs truncate ${subtext}`}>{w.translation}</p>
+                      </div>
+                      <span className="text-xs px-2 py-0.5 rounded-full shrink-0 font-medium" style={{ backgroundColor: catColor + '20', color: catColor }}>
+                        {w.category}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Activity last 7 days */}
       {stats.total > 0 && (

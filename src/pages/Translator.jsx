@@ -17,10 +17,13 @@ const CATEGORY_COLORS = {
 export default function Translator() {
   const { isDark, toggle } = useTheme()
   const { user, signOut } = useAuth()
-  const [words] = useWords(user?.id)
+  const [words] = useWords()
   const [text, setText] = useState('')
-  const [fromLang, setFromLang] = useState('de')
-  const [toLang, setToLang] = useState('es')
+  const [fromLang, setFromLangRaw] = useState(() => localStorage.getItem('wordy_from_lang') || 'de')
+  const [toLang, setToLangRaw] = useState(() => localStorage.getItem('wordy_to_lang') || 'es')
+
+  function setFromLang(v) { setFromLangRaw(v); localStorage.setItem('wordy_from_lang', v) }
+  function setToLang(v) { setToLangRaw(v); localStorage.setItem('wordy_to_lang', v) }
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')

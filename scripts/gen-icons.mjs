@@ -12,6 +12,10 @@ const sizes = [
 ]
 
 for (const { name, size } of sizes) {
-  await sharp(src).resize(size, size).png().toFile(`public/${name}`)
+  await sharp(src)
+    .resize(size, size)
+    .flatten({ background: '#0d1b3e' })
+    .png()
+    .toFile(`public/${name}`)
   console.log(`public/${name} ✓`)
 }

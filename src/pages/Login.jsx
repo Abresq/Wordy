@@ -12,6 +12,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [confirmEmail, setConfirmEmail] = useState('')
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'
   const inputCls = isDark
@@ -28,6 +29,7 @@ export default function Login() {
         await signIn(email, password)
       } else {
         await signUp(email, password, name)
+        setConfirmEmail(email)
       }
     } catch (err) {
       const msg = err.message || 'Error desconocido'
@@ -162,6 +164,31 @@ export default function Login() {
           </p>
         </div>
       </div>
+
+      {/* Email confirmation modal */}
+      {confirmEmail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+          <div className={`w-full max-w-xs rounded-2xl border p-6 text-center ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-xl'}`}>
+            <p className="text-4xl mb-3">📬</p>
+            <p className={`text-base font-semibold mb-1 ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+              Revisa tu correo
+            </p>
+            <p className={`text-sm mb-1 ${subtext}`}>
+              Te enviamos un enlace de confirmación a
+            </p>
+            <p className="text-sm font-medium text-blue-500 mb-5 break-all">{confirmEmail}</p>
+            <p className={`text-xs mb-5 ${subtext}`}>
+              Confirma tu cuenta y después inicia sesión.
+            </p>
+            <button
+              onClick={() => { setConfirmEmail(''); setTab('login') }}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-teal-500 text-white text-sm font-semibold"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

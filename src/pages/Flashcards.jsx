@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
-import { RotateCw, ThumbsUp, Minus, ThumbsDown, CheckCircle2, GalleryHorizontal } from 'lucide-react'
+import { RotateCw, ThumbsUp, Minus, ThumbsDown, CheckCircle2, GalleryHorizontal, Settings2, ChevronRight } from 'lucide-react'
 import { useWords, updateWordScore } from '../store'
 import { useTheme } from '../theme.jsx'
-import { useAuth } from '../auth.jsx'
 
 const CATEGORY_COLORS = {
   'General': '#6366f1', 'Comida': '#f97316', 'Viajes': '#0ea5e9',
@@ -16,37 +15,33 @@ const CATEGORY_COLORS = {
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5) }
 function smartSort(words) { return shuffle(words).sort((a, b) => (a.score || 0) - (b.score || 0)) }
 
+function scoreGroup(score) {
+  if (score >= 3) return 'known'
+  if (score >= 0) return 'learning'
+  return 'unknown'
+}
+
+const STATUS_OPTIONS = [
+  { key: 'all', label: 'Todo el vocabulario', emoji: '📚', desc: 'Todas las palabras guardadas' },
+  { key: 'unknown', label: 'No me las sé', emoji: '❌', desc: 'Palabras con puntuación baja', color: '#ef4444' },
+  { key: 'learning', label: 'Más o menos', emoji: '🤔', desc: 'Palabras que estás aprendiendo', color: '#f59e0b' },
+  { key: 'known', label: 'Ya me las sé', emoji: '✅', desc: 'Palabras que ya dominas', color: '#22c55e' },
+]
+
 export default function Flashcards() {
   const { isDark } = useTheme()
-  const { user } = useAuth()
   const [deck, setDeck] = useState([])
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [done, setDone] = useState(false)
   const [sessionResults, setSessionResults] = useState({ known: 0, learning: 0, unknown: 0 })
+  const [screen, setScreen] = useState('setup') // 'setup' | 'playing' | 'done'
 
-  const [allWords] = useWords(user?.id)
+  // Setup state
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedCats, setSelectedCats] = useState([]) // empty = todas
 
-  const deckLoaded = deck.length > 0 || done
-  useEffect(() => { if (allWords.length > 0 && !deckLoaded) loadDeck(allWords) }, [allWords, deckLoaded])
-
-  function loadDeck(words = allWords) {
-    if (!words.length) { setDeck([]); return }
-    setDeck(smartSort(words))
-    setIndex(0)
-    setFlipped(false)
-    setDone(false)
-    setSessionResults({ known: 0, learning: 0, unknown: 0 })
-  }
-
-  function handleRate(rating) {
-    const delta = rating === 'known' ? 2 : rating === 'learning' ? 1 : -1
-    updateWordScore(deck[index].id, delta)
-    setSessionResults(prev => ({ ...prev, [rating]: prev[rating] + 1 }))
-    const next = index + 1
-    if (next >= deck.length) setDone(true)
-    else { setIndex(next); setFlipped(false) }
-  }
+  const [allWords] = useWords()
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'
   const subtext = isDark ? 'text-zinc-500' : 'text-zinc-400'
@@ -54,17 +49,159 @@ export default function Flashcards() {
   const muted = isDark ? 'text-zinc-300' : 'text-zinc-600'
   const innerCard = isDark ? 'bg-zinc-800' : 'bg-zinc-50 border border-zinc-100'
 
-  if (deck.length === 0) {
+  const availableCategories = [...new Set(allWords.map(w => w.category).filter(Boolean))].sort()
+
+  function getFilteredWords() {
+    let filtered = allWords
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(w => scoreGroup(w.score || 0) === statusFilter)
+    }
+    if (selectedCats.length > 0) {
+      filtered = filtered.filter(w => selectedCats.includes(w.category))
+    }
+    return filtered
+  }
+
+  const previewCount = getFilteredWords().length
+
+  function startDeck() {
+    const filtered = getFilteredWords()
+    if (!filtered.length) return
+    setDeck(smartSort(filtered))
+    setIndex(0)
+    setFlipped(false)
+    setDone(false)
+    setSessionResults({ known: 0, learning: 0, unknown: 0 })
+    setScreen('playing')
+  }
+
+  function playAgain() {
+    setScreen('setup')
+  }
+
+  function handleRate(rating) {
+    const delta = rating === 'known' ? 2 : rating === 'learning' ? 1 : -1
+    updateWordScore(deck[index].id, delta)
+    setSessionResults(prev => ({ ...prev, [rating]: prev[rating] + 1 }))
+    const next = index + 1
+    if (next >= deck.length) setScreen('done')
+    else { setIndex(next); setFlipped(false) }
+  }
+
+  function toggleCat(cat) {
+    setSelectedCats(prev =>
+      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+    )
+  }
+
+  // ── Setup screen ──
+  if (screen === 'setup') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 gap-4 text-center">
-        <p className="text-6xl">🃏</p>
-        <p className={`text-xl font-bold ${text}`}>Sin flashcards</p>
-        <p className={`text-sm ${subtext}`}>Guarda palabras en el traductor<br />para estudiarlas aquí.</p>
+      <div className="flex flex-col gap-5 p-4 pb-28 max-w-lg mx-auto">
+        <div className="pt-6 pb-1">
+          <div className="flex items-center gap-2">
+            <GalleryHorizontal size={22} className="text-blue-600" />
+            <h1 className={`text-2xl font-bold ${text}`}>Estudio</h1>
+          </div>
+          <p className={`text-sm mt-1 ${subtext}`}>Elige qué quieres repasar</p>
+        </div>
+
+        {allWords.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+            <p className="text-6xl">🃏</p>
+            <p className={`text-lg font-bold ${text}`}>Sin palabras aún</p>
+            <p className={`text-sm ${subtext}`}>Guarda palabras en el traductor<br />para estudiarlas aquí.</p>
+          </div>
+        ) : (
+          <>
+            {/* Status filter */}
+            <div>
+              <p className={`text-xs font-semibold uppercase tracking-wider mb-3 ${subtext}`}>¿Cuáles quieres repasar?</p>
+              <div className="flex flex-col gap-2">
+                {STATUS_OPTIONS.map(opt => {
+                  const count = opt.key === 'all'
+                    ? allWords.length
+                    : allWords.filter(w => scoreGroup(w.score || 0) === opt.key).length
+                  const active = statusFilter === opt.key
+                  return (
+                    <button
+                      key={opt.key}
+                      onClick={() => setStatusFilter(opt.key)}
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all ${
+                        active
+                          ? 'border-blue-500 bg-blue-500/10'
+                          : isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'
+                      }`}
+                    >
+                      <span className="text-2xl">{opt.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-semibold ${active ? 'text-blue-500' : text}`}>{opt.label}</p>
+                        <p className={`text-xs ${subtext}`}>{opt.desc}</p>
+                      </div>
+                      <span className={`text-sm font-bold shrink-0 ${active ? 'text-blue-500' : subtext}`}>{count}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Category filter */}
+            {availableCategories.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className={`text-xs font-semibold uppercase tracking-wider ${subtext}`}>Filtrar por categoría</p>
+                  {selectedCats.length > 0 && (
+                    <button onClick={() => setSelectedCats([])} className={`text-xs ${subtext} underline`}>
+                      Quitar filtros
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {availableCategories.map(cat => {
+                    const color = CATEGORY_COLORS[cat] || '#6366f1'
+                    const active = selectedCats.includes(cat)
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => toggleCat(cat)}
+                        className="text-xs px-3 py-1.5 rounded-full font-medium transition-all"
+                        style={{
+                          backgroundColor: active ? color : color + '18',
+                          color: active ? '#fff' : color,
+                          border: `1px solid ${color}40`,
+                        }}
+                      >
+                        {cat}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Start button */}
+            <button
+              onClick={startDeck}
+              disabled={previewCount === 0}
+              className={`flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-semibold text-sm transition-all ${
+                previewCount > 0
+                  ? 'bg-gradient-to-r from-blue-600 to-teal-500 text-white active:scale-[0.98]'
+                  : isDark ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
+              }`}
+            >
+              {previewCount > 0
+                ? <><ChevronRight size={18} /> Empezar con {previewCount} {previewCount === 1 ? 'palabra' : 'palabras'}</>
+                : 'Sin palabras con ese filtro'
+              }
+            </button>
+          </>
+        )}
       </div>
     )
   }
 
-  if (done) {
+  // ── Done screen ──
+  if (screen === 'done') {
     const total = sessionResults.known + sessionResults.learning + sessionResults.unknown
     const pctKnown = Math.round((sessionResults.known / total) * 100)
 
@@ -128,16 +265,26 @@ export default function Flashcards() {
             </div>
           ))}
         </div>
-        <button
-          onClick={() => loadDeck()}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold text-sm"
-        >
-          <RotateCw size={16} /> Otra ronda
-        </button>
+
+        <div className="flex gap-3 w-full">
+          <button
+            onClick={playAgain}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-semibold transition-colors ${isDark ? 'border-zinc-700 text-zinc-300' : 'border-zinc-200 text-zinc-600'}`}
+          >
+            <Settings2 size={15} /> Cambiar filtros
+          </button>
+          <button
+            onClick={startDeck}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold text-sm"
+          >
+            <RotateCw size={15} /> Otra ronda
+          </button>
+        </div>
       </div>
     )
   }
 
+  // ── Playing screen ──
   const cardData = deck[index]
   const catColor = CATEGORY_COLORS[cardData.category] || '#6366f1'
   const progress = (index / deck.length) * 100
@@ -150,7 +297,12 @@ export default function Flashcards() {
             <GalleryHorizontal size={22} className="text-blue-600" />
             <h1 className={`text-2xl font-bold ${text}`}>Flashcards</h1>
           </div>
-          <span className={`text-sm font-medium ${subtext}`}>{index + 1} / {deck.length}</span>
+          <div className="flex items-center gap-3">
+            <span className={`text-sm font-medium ${subtext}`}>{index + 1} / {deck.length}</span>
+            <button onClick={playAgain} className={`p-1.5 rounded-lg ${isDark ? 'text-zinc-600 hover:text-zinc-400' : 'text-zinc-400 hover:text-zinc-500'}`}>
+              <Settings2 size={16} />
+            </button>
+          </div>
         </div>
         <div className={`rounded-full h-2 mt-3 overflow-hidden ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
           <div

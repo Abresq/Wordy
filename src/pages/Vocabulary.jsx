@@ -28,7 +28,7 @@ function scoreGroup(score) {
 export default function Vocabulary() {
   const { isDark } = useTheme()
   const { user } = useAuth()
-  const [words, setWords] = useWords(user?.id)
+  const [words, setWords] = useWords()
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('Todas')
   const [showFilter, setShowFilter] = useState(false)

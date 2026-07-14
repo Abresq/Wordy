@@ -1,8 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useContext, createContext, useRef } from 'react'
 import { supabase } from './supabase'
 
-export function useWords(userId) {
-  const [words, setWords] = useState([])
+const WordsContext = createContext(null)
+
+export function WordsProvider({ userId, children }) {
+  const cache = useRef([])
+  const [words, setWords] = useState(cache.current)
 
   const refetch = useCallback(() => {
     if (!userId) return
@@ -12,11 +15,14 @@ export function useWords(userId) {
       .eq('user_id', userId)
       .neq('hidden', true)
       .order('added_at', { ascending: false })
-      .then(({ data }) => setWords(data || []))
+      .then(({ data }) => {
+        cache.current = data || []
+        setWords(cache.current)
+      })
   }, [userId])
 
   useEffect(() => {
-    if (!userId) { setWords([]); return }
+    if (!userId) { cache.current = []; setWords([]); return }
 
     refetch()
 
@@ -30,7 +36,23 @@ export function useWords(userId) {
     return () => supabase.removeChannel(channel)
   }, [userId, refetch])
 
-  return [words, setWords]
+  const setWordsAndCache = useCallback((updater) => {
+    setWords(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater
+      cache.current = next
+      return next
+    })
+  }, [])
+
+  return (
+    <WordsContext.Provider value={[words, setWordsAndCache, refetch]}>
+      {children}
+    </WordsContext.Provider>
+  )
+}
+
+export function useWords() {
+  return useContext(WordsContext)
 }
 
 export async function saveWord(word, userId) {
