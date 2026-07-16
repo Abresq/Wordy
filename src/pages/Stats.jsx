@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BarChart2, TrendingUp, Award, UserCircle, LogOut, X } from 'lucide-react'
+import { TrendingUp, Award, UserCircle, LogOut, X, Trophy, Flame, Sprout, Star, CheckCircle2, BookOpen, XCircle } from 'lucide-react'
 import { useWords, getStats } from '../store'
 import { useTheme } from '../theme.jsx'
 import { useAuth } from '../auth.jsx'
@@ -14,11 +14,11 @@ const CATEGORY_COLORS = {
 }
 
 function getLevel(pct) {
-  if (pct >= 80) return { label: 'Experto', emoji: '🏆', color: '#f59e0b' }
-  if (pct >= 60) return { label: 'Avanzado', emoji: '🔥', color: '#22c55e' }
-  if (pct >= 40) return { label: 'Intermedio', emoji: '📈', color: '#0ea5e9' }
-  if (pct >= 20) return { label: 'Básico', emoji: '🌱', color: '#8b5cf6' }
-  return { label: 'Principiante', emoji: '✨', color: '#6366f1' }
+  if (pct >= 80) return { label: 'Experto', Icon: Trophy, color: '#f59e0b' }
+  if (pct >= 60) return { label: 'Avanzado', Icon: Flame, color: '#22c55e' }
+  if (pct >= 40) return { label: 'Intermedio', Icon: TrendingUp, color: '#0ea5e9' }
+  if (pct >= 20) return { label: 'Básico', Icon: Sprout, color: '#8b5cf6' }
+  return { label: 'Principiante', Icon: Star, color: '#6366f1' }
 }
 
 export default function Stats() {
@@ -69,7 +69,10 @@ export default function Stats() {
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className={`text-xs font-medium uppercase tracking-wider ${subtext}`}>Nivel actual</p>
-            <p className="text-2xl font-bold mt-1" style={{ color: level.color }}>{level.emoji} {level.label}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <level.Icon size={20} style={{ color: level.color }} />
+              <p className="text-2xl font-bold" style={{ color: level.color }}>{level.label}</p>
+            </div>
             <p className={`text-xs mt-1 ${subtext}`}>{stats.total} palabras en total</p>
           </div>
           <div className="text-right">
@@ -92,16 +95,16 @@ export default function Stats() {
       {/* Score breakdown */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { key: 'known', label: 'Dominadas', color: '#22c55e', emoji: '✅' },
-          { key: 'learning', label: 'Aprendiendo', color: '#f59e0b', emoji: '📖' },
-          { key: 'new', label: 'Sin repasar', color: '#6366f1', emoji: '💤' },
-        ].map(({ key, label, color, emoji }) => (
+          { key: 'known', label: 'Dominadas', color: '#22c55e', Icon: CheckCircle2 },
+          { key: 'learning', label: 'Aprendiendo', color: '#f59e0b', Icon: BookOpen },
+          { key: 'new', label: 'Sin repasar', color: '#6366f1', Icon: XCircle },
+        ].map(({ key, label, color, Icon }) => (
           <button
             key={key}
             onClick={() => stats.scoreGroups[key] > 0 && setWordModal(key)}
             className={`rounded-2xl border p-3 text-center transition-all active:scale-95 ${card} ${stats.scoreGroups[key] > 0 ? 'cursor-pointer' : 'cursor-default'}`}
           >
-            <p className="text-xl">{emoji}</p>
+            <Icon size={20} className="mx-auto" style={{ color }} />
             <p className="text-2xl font-bold mt-1" style={{ color }}>{stats.scoreGroups[key]}</p>
             <p className={`text-[10px] mt-0.5 ${subtext}`}>{label}</p>
           </button>
@@ -111,11 +114,11 @@ export default function Stats() {
       {/* Word list modal */}
       {wordModal && (() => {
         const configs = {
-          known:    { label: 'Dominadas', color: '#22c55e', emoji: '✅', filter: w => (w.score || 0) >= 3 },
-          learning: { label: 'Aprendiendo', color: '#f59e0b', emoji: '📖', filter: w => (w.score || 0) >= 0 && (w.score || 0) < 3 },
-          new:      { label: 'Sin repasar', color: '#6366f1', emoji: '💤', filter: w => (w.score || 0) < 0 },
+          known:    { label: 'Dominadas', color: '#22c55e', Icon: CheckCircle2, filter: w => (w.score || 0) >= 3 },
+          learning: { label: 'Aprendiendo', color: '#f59e0b', Icon: BookOpen, filter: w => (w.score || 0) >= 0 && (w.score || 0) < 3 },
+          new:      { label: 'Sin repasar', color: '#6366f1', Icon: XCircle, filter: w => (w.score || 0) < 0 },
         }
-        const { label, color, emoji, filter } = configs[wordModal]
+        const { label, color, Icon: ModalIcon, filter } = configs[wordModal]
         const filtered = words.filter(filter)
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setWordModal(null)}>
@@ -125,7 +128,7 @@ export default function Stats() {
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">{emoji}</span>
+                  <ModalIcon size={18} style={{ color }} />
                   <p className="font-semibold text-base" style={{ color }}>{label}</p>
                   <span className={`text-sm ${subtext}`}>· {filtered.length}</span>
                 </div>
@@ -219,7 +222,7 @@ export default function Stats() {
 
       {stats.total === 0 && (
         <div className="text-center py-10">
-          <p className="text-5xl mb-3">📊</p>
+          <TrendingUp size={48} className={`mx-auto mb-3 ${subtext}`} />
           <p className={`text-sm ${subtext}`}>Traduce y guarda palabras<br />para ver tus estadísticas</p>
         </div>
       )}

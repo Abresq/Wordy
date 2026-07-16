@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeftRight, Loader2, BookmarkPlus, Check, Sun, Moon, Zap } from 'lucide-react'
+import { ArrowLeftRight, Loader2, BookmarkPlus, Check, Sun, Moon, Zap, Library, CheckCircle2 } from 'lucide-react'
 import { LANGUAGES, translateAndAnalyze } from '../api'
 import { saveWord, useWords } from '../store'
 import { useTheme } from '../theme.jsx'
@@ -17,7 +17,7 @@ const CATEGORY_COLORS = {
 export default function Translator() {
   const { isDark, toggle } = useTheme()
   const { user, signOut } = useAuth()
-  const [words] = useWords()
+  const [words, , refetch] = useWords()
   const [text, setText] = useState('')
   const [fromLang, setFromLangRaw] = useState(() => localStorage.getItem('wordy_from_lang') || 'de')
   const [toLang, setToLangRaw] = useState(() => localStorage.getItem('wordy_to_lang') || 'es')
@@ -70,6 +70,7 @@ export default function Translator() {
       exampleTranslation: result.exampleTranslation,
       type: result.type,
     }, user.id)
+    refetch()
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -113,12 +114,12 @@ export default function Translator() {
       {/* Quick stats bar */}
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: 'Guardadas', value: words.length, color: '#8b5cf6', emoji: '📚' },
-          { label: 'Hoy', value: todayCount, color: '#0ea5e9', emoji: '⚡' },
-          { label: 'Dominadas', value: dominatedCount, color: '#22c55e', emoji: '✅' },
-        ].map(({ label, value, color, emoji }) => (
+          { label: 'Guardadas', value: words.length, color: '#8b5cf6', Icon: Library },
+          { label: 'Hoy', value: todayCount, color: '#0ea5e9', Icon: Zap },
+          { label: 'Dominadas', value: dominatedCount, color: '#22c55e', Icon: CheckCircle2 },
+        ].map(({ label, value, color, Icon }) => (
           <div key={label} className={`rounded-2xl border p-3 text-center ${card}`}>
-            <p className="text-lg">{emoji}</p>
+            <Icon size={18} className="mx-auto" style={{ color }} />
             <p className="text-xl font-bold mt-0.5" style={{ color }}>{value}</p>
             <p className={`text-[10px] mt-0.5 ${subtext}`}>{label}</p>
           </div>

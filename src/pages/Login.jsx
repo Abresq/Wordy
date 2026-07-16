@@ -169,7 +169,7 @@ export default function Login() {
       {confirmEmail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
           <div className={`w-full max-w-xs rounded-2xl border p-6 text-center ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-xl'}`}>
-            <p className="text-4xl mb-3">📬</p>
+            <Mail size={40} className="mx-auto mb-3 text-blue-500" />
             <p className={`text-base font-semibold mb-1 ${isDark ? 'text-white' : 'text-zinc-900'}`}>
               Revisa tu correo
             </p>

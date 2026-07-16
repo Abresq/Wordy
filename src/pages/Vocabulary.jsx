@@ -129,7 +129,7 @@ export default function Vocabulary() {
       {/* Words list */}
       {filtered.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-5xl mb-3">📚</p>
+          <BookOpen size={48} className={`mx-auto mb-3 ${subtext}`} />
           <p className={`text-sm ${subtext}`}>No hay palabras aún.<br />¡Empieza traduciendo algo!</p>
         </div>
       ) : (

@@ -115,7 +115,7 @@ export function getStats(words) {
     const cat = w.category || 'Sin categoría'
     byCategory[cat] = (byCategory[cat] || 0) + 1
     if (w.score >= 3) scoreGroups.known++
-    else if (w.score >= 0) scoreGroups.learning++
+    else if (w.review_count > 0) scoreGroups.learning++
     else scoreGroups.new++
   })
   const levelPercent = total === 0 ? 0 : Math.round((scoreGroups.known / total) * 100)

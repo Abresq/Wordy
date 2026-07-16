@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { RotateCw, ThumbsUp, Minus, ThumbsDown, CheckCircle2, GalleryHorizontal, Settings2, ChevronRight, Volume2 } from 'lucide-react'
+import { RotateCw, ThumbsUp, Minus, ThumbsDown, CheckCircle2, GalleryHorizontal, Settings2, ChevronRight, ChevronDown, Volume2, Library, BookOpen, XCircle } from 'lucide-react'
 import { useWords, updateWordScore } from '../store'
 import { useTheme } from '../theme.jsx'
 
@@ -15,17 +15,19 @@ const CATEGORY_COLORS = {
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5) }
 function smartSort(words) { return shuffle(words).sort((a, b) => (a.score || 0) - (b.score || 0)) }
 
-function scoreGroup(score) {
-  if (score >= 3) return 'known'
-  if (score >= 0) return 'learning'
+function scoreGroup(word) {
+  if ((word.review_count || 0) === 0) return 'new'
+  if ((word.score || 0) >= 3) return 'known'
+  if ((word.score || 0) >= 0) return 'learning'
   return 'unknown'
 }
 
 const STATUS_OPTIONS = [
-  { key: 'all', label: 'Todo el vocabulario', emoji: '📚', desc: 'Todas las palabras guardadas' },
-  { key: 'unknown', label: 'No me las sé', emoji: '❌', desc: 'Palabras con puntuación baja', color: '#ef4444' },
-  { key: 'learning', label: 'Más o menos', emoji: '🤔', desc: 'Palabras que estás aprendiendo', color: '#f59e0b' },
-  { key: 'known', label: 'Ya me las sé', emoji: '✅', desc: 'Palabras que ya dominas', color: '#22c55e' },
+  { key: 'all',     label: 'Todo el vocabulario', Icon: Library,       desc: 'Todas las palabras guardadas',     color: '#8b5cf6' },
+  { key: 'new',     label: 'Sin repasar',          Icon: BookOpen,      desc: 'Palabras que nunca has estudiado', color: '#64748b' },
+  { key: 'unknown', label: 'No me las sé',         Icon: XCircle,       desc: 'Palabras con puntuación baja',     color: '#ef4444' },
+  { key: 'learning',label: 'Más o menos',          Icon: BookOpen,      desc: 'Palabras que estás aprendiendo',   color: '#f59e0b' },
+  { key: 'known',   label: 'Ya me las sé',         Icon: CheckCircle2,  desc: 'Palabras que ya dominas',          color: '#22c55e' },
 ]
 
 export default function Flashcards() {
@@ -36,12 +38,14 @@ export default function Flashcards() {
   const [done, setDone] = useState(false)
   const [sessionResults, setSessionResults] = useState({ known: 0, learning: 0, unknown: 0 })
   const [screen, setScreen] = useState('setup') // 'setup' | 'playing' | 'done'
+  const [pendingUpdates, setPendingUpdates] = useState([])
 
   // Setup state
   const [statusFilter, setStatusFilter] = useState('all')
-  const [selectedCats, setSelectedCats] = useState([]) // empty = todas
+  const [selectedCats, setSelectedCats] = useState([])
+  const [catsOpen, setCatsOpen] = useState(false)
 
-  const [allWords] = useWords()
+  const [allWords, , refetch] = useWords()
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'
   const subtext = isDark ? 'text-zinc-500' : 'text-zinc-400'
@@ -54,7 +58,7 @@ export default function Flashcards() {
   function getFilteredWords() {
     let filtered = allWords
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(w => scoreGroup(w.score || 0) === statusFilter)
+      filtered = filtered.filter(w => scoreGroup(w) === statusFilter)
     }
     if (selectedCats.length > 0) {
       filtered = filtered.filter(w => selectedCats.includes(w.category))
@@ -72,6 +76,7 @@ export default function Flashcards() {
     setFlipped(false)
     setDone(false)
     setSessionResults({ known: 0, learning: 0, unknown: 0 })
+    setPendingUpdates([])
     setScreen('playing')
   }
 
@@ -81,11 +86,18 @@ export default function Flashcards() {
 
   function handleRate(rating) {
     const delta = rating === 'known' ? 2 : rating === 'learning' ? 1 : -1
-    updateWordScore(deck[index].id, delta)
+    const promise = updateWordScore(deck[index].id, delta)
     setSessionResults(prev => ({ ...prev, [rating]: prev[rating] + 1 }))
     const next = index + 1
-    if (next >= deck.length) setScreen('done')
-    else { setIndex(next); setFlipped(false) }
+    if (next >= deck.length) {
+      Promise.all([...pendingUpdates, promise]).then(() => refetch())
+      setPendingUpdates([])
+      setScreen('done')
+    } else {
+      setPendingUpdates(prev => [...prev, promise])
+      setIndex(next)
+      setFlipped(false)
+    }
   }
 
   function toggleCat(cat) {
@@ -108,7 +120,7 @@ export default function Flashcards() {
 
         {allWords.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-            <p className="text-6xl">🃏</p>
+            <GalleryHorizontal size={48} className={subtext} />
             <p className={`text-lg font-bold ${text}`}>Sin palabras aún</p>
             <p className={`text-sm ${subtext}`}>Guarda palabras en el traductor<br />para estudiarlas aquí.</p>
           </div>
@@ -121,7 +133,7 @@ export default function Flashcards() {
                 {STATUS_OPTIONS.map(opt => {
                   const count = opt.key === 'all'
                     ? allWords.length
-                    : allWords.filter(w => scoreGroup(w.score || 0) === opt.key).length
+                    : allWords.filter(w => scoreGroup(w) === opt.key).length
                   const active = statusFilter === opt.key
                   return (
                     <button
@@ -133,7 +145,7 @@ export default function Flashcards() {
                           : isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'
                       }`}
                     >
-                      <span className="text-2xl">{opt.emoji}</span>
+                      <opt.Icon size={20} style={{ color: active ? '#3b82f6' : opt.color }} />
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-semibold ${active ? 'text-blue-500' : text}`}>{opt.label}</p>
                         <p className={`text-xs ${subtext}`}>{opt.desc}</p>
@@ -147,35 +159,48 @@ export default function Flashcards() {
 
             {/* Category filter */}
             {availableCategories.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <p className={`text-xs font-semibold uppercase tracking-wider ${subtext}`}>Filtrar por categoría</p>
-                  {selectedCats.length > 0 && (
-                    <button onClick={() => setSelectedCats([])} className={`text-xs ${subtext} underline`}>
-                      Quitar filtros
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {availableCategories.map(cat => {
-                    const color = CATEGORY_COLORS[cat] || '#6366f1'
-                    const active = selectedCats.includes(cat)
-                    return (
-                      <button
-                        key={cat}
-                        onClick={() => toggleCat(cat)}
-                        className="text-xs px-3 py-1.5 rounded-full font-medium transition-all"
-                        style={{
-                          backgroundColor: active ? color : color + '18',
-                          color: active ? '#fff' : color,
-                          border: `1px solid ${color}40`,
-                        }}
-                      >
-                        {cat}
+              <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'}`}>
+                <button
+                  onClick={() => setCatsOpen(o => !o)}
+                  className="flex items-center justify-between w-full px-4 py-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <p className={`text-sm font-semibold ${text}`}>Filtrar por categoría</p>
+                    {selectedCats.length > 0 && (
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-500 text-white">{selectedCats.length}</span>
+                    )}
+                  </div>
+                  <ChevronDown size={16} className={`${subtext} transition-transform duration-200 ${catsOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {catsOpen && (
+                  <div className={`px-4 pb-4 pt-1 border-t ${isDark ? 'border-zinc-800' : 'border-zinc-100'}`}>
+                    {selectedCats.length > 0 && (
+                      <button onClick={() => setSelectedCats([])} className={`text-xs ${subtext} underline mb-3 block`}>
+                        Quitar filtros
                       </button>
-                    )
-                  })}
-                </div>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {availableCategories.map(cat => {
+                        const color = CATEGORY_COLORS[cat] || '#6366f1'
+                        const active = selectedCats.includes(cat)
+                        return (
+                          <button
+                            key={cat}
+                            onClick={() => toggleCat(cat)}
+                            className="text-xs px-3 py-1.5 rounded-full font-medium transition-all"
+                            style={{
+                              backgroundColor: active ? color : color + '18',
+                              color: active ? '#fff' : color,
+                              border: `1px solid ${color}40`,
+                            }}
+                          >
+                            {cat}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -254,12 +279,12 @@ export default function Flashcards() {
 
         <div className="w-full grid grid-cols-3 gap-3">
           {[
-            { key: 'known', label: 'Me la sé', color: '#22c55e', emoji: '✅' },
-            { key: 'learning', label: 'Más o menos', color: '#f59e0b', emoji: '🤔' },
-            { key: 'unknown', label: 'Para nada', color: '#ef4444', emoji: '❌' },
-          ].map(({ key, label, color, emoji }) => (
+            { key: 'known', label: 'Me la sé', color: '#22c55e', Icon: CheckCircle2 },
+            { key: 'learning', label: 'Más o menos', color: '#f59e0b', Icon: BookOpen },
+            { key: 'unknown', label: 'Para nada', color: '#ef4444', Icon: XCircle },
+          ].map(({ key, label, color, Icon }) => (
             <div key={key} className={`rounded-2xl border p-3 text-center ${card}`}>
-              <p className="text-xl">{emoji}</p>
+              <Icon size={20} className="mx-auto" style={{ color }} />
               <p className="text-2xl font-bold mt-1" style={{ color }}>{sessionResults[key]}</p>
               <p className={`text-[10px] mt-0.5 ${subtext}`}>{label}</p>
             </div>
@@ -326,31 +351,28 @@ export default function Flashcards() {
       {/* Session mini stats */}
       <div className="flex gap-2">
         {[
-          { key: 'known', color: '#22c55e', emoji: '✅' },
-          { key: 'learning', color: '#f59e0b', emoji: '🤔' },
-          { key: 'unknown', color: '#ef4444', emoji: '❌' },
-        ].map(({ key, color, emoji }) => (
+          { key: 'known', color: '#22c55e', Icon: CheckCircle2 },
+          { key: 'learning', color: '#f59e0b', Icon: BookOpen },
+          { key: 'unknown', color: '#ef4444', Icon: XCircle },
+        ].map(({ key, color, Icon }) => (
           <div key={key} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border text-sm font-bold ${card}`} style={{ color }}>
-            {emoji} {sessionResults[key]}
+            <Icon size={14} /> {sessionResults[key]}
           </div>
         ))}
       </div>
 
       {/* Card */}
-      <div
-        className={`rounded-3xl border p-6 min-h-[280px] flex flex-col justify-between cursor-pointer active:scale-[0.98] transition-transform ${card}`}
-        onClick={() => setFlipped(!flipped)}
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: catColor + '25', color: catColor }}>
-            {cardData.category}
-          </span>
-          <span className={`text-xs ${subtext}`}>{cardData.type}</span>
-        </div>
-
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-6">
-          {!flipped ? (
-            <>
+      <div className="flashcard-scene" style={{ height: cardData.example ? 360 : 300 }} onClick={() => setFlipped(!flipped)}>
+        <div className={`flashcard-inner${flipped ? ' flipped' : ''}`} style={{ height: '100%' }}>
+          {/* Front */}
+          <div className={`flashcard-face rounded-3xl border p-6 flex flex-col justify-between cursor-pointer ${card}`}>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: catColor + '25', color: catColor }}>
+                {cardData.category}
+              </span>
+              <span className={`text-xs ${subtext}`}>{cardData.type}</span>
+            </div>
+            <div className="flex-1 flex flex-col items-center justify-center gap-4">
               <p className={`text-4xl font-bold text-center ${text}`}>{cardData.original}</p>
               <p className={`text-xs uppercase tracking-wider ${subtext}`}>{cardData.from_lang} → {cardData.to_lang}</p>
               <button
@@ -359,61 +381,70 @@ export default function Flashcards() {
               >
                 <Volume2 size={13} /> Escuchar
               </button>
-            </>
-          ) : (
-            <>
-              <p className={`text-sm uppercase tracking-wider ${subtext}`}>{cardData.original}</p>
-              <p className={`text-4xl font-bold text-center ${text}`}>{cardData.translation}</p>
+            </div>
+            <div className={`text-center text-xs ${subtext}`}>👆 Toca la tarjeta</div>
+          </div>
+
+          {/* Back */}
+          <div className={`flashcard-face flashcard-face-back rounded-3xl border p-5 flex flex-col justify-between ${card}`}>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: catColor + '25', color: catColor }}>
+                {cardData.category}
+              </span>
+              <span className={`text-xs ${subtext}`}>{cardData.type}</span>
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <p className={`text-xs uppercase tracking-wider ${subtext}`}>{cardData.original}</p>
+              <p className={`text-3xl font-bold text-center ${text}`}>{cardData.translation}</p>
               <button
                 onClick={e => { e.stopPropagation(); speak(cardData.translation, cardData.to_lang) }}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium transition-colors ${isDark ? 'bg-zinc-800 text-zinc-400 hover:text-blue-400' : 'bg-zinc-100 text-zinc-500 hover:text-blue-500'}`}
               >
                 <Volume2 size={13} /> Escuchar traducción
               </button>
-              {cardData.example && (
-                <div className={`rounded-xl p-3 w-full mt-1 ${innerCard}`}>
-                  <p className={`text-xs italic text-center ${muted}`}>"{cardData.example}"</p>
-                  {cardData.example_translation && (
-                    <p className={`text-xs text-center mt-1 ${subtext}`}>"{cardData.example_translation}"</p>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        <div className={`text-center text-xs ${subtext}`}>
-          {!flipped ? '👆 Toca la tarjeta' : '¿Cuánto la sabías?'}
+            </div>
+            {cardData.example ? (
+              <div className={`rounded-xl p-3 ${innerCard}`}>
+                <p className={`text-xs italic text-center ${muted}`}>"{cardData.example}"</p>
+                {cardData.example_translation && (
+                  <p className={`text-xs text-center mt-1 ${subtext}`}>"{cardData.example_translation}"</p>
+                )}
+              </div>
+            ) : <div />}
+          </div>
         </div>
       </div>
 
       {/* Rating buttons */}
       {flipped && (
-        <div className="grid grid-cols-3 gap-3">
-          <button
-            onClick={() => handleRate('unknown')}
-            className="flex flex-col items-center gap-2 py-4 rounded-2xl border active:scale-95 transition-transform"
-            style={{ backgroundColor: '#ef444415', borderColor: '#ef444440', color: '#ef4444' }}
-          >
-            <ThumbsDown size={22} />
-            <span className="text-xs font-semibold">Para nada</span>
-          </button>
-          <button
-            onClick={() => handleRate('learning')}
-            className="flex flex-col items-center gap-2 py-4 rounded-2xl border active:scale-95 transition-transform"
-            style={{ backgroundColor: '#f59e0b15', borderColor: '#f59e0b40', color: '#f59e0b' }}
-          >
-            <Minus size={22} />
-            <span className="text-xs font-semibold">Más o menos</span>
-          </button>
-          <button
-            onClick={() => handleRate('known')}
-            className="flex flex-col items-center gap-2 py-4 rounded-2xl border active:scale-95 transition-transform"
-            style={{ backgroundColor: '#22c55e15', borderColor: '#22c55e40', color: '#22c55e' }}
-          >
-            <ThumbsUp size={22} />
-            <span className="text-xs font-semibold">Me la sé</span>
-          </button>
+        <div className="flex flex-col gap-2">
+          <p className={`text-center text-xs ${subtext}`}>¿Cuánto la sabías?</p>
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              onClick={() => handleRate('unknown')}
+              className="flex flex-col items-center gap-2 py-4 rounded-2xl border active:scale-95 transition-transform"
+              style={{ backgroundColor: '#ef444415', borderColor: '#ef444440', color: '#ef4444' }}
+            >
+              <ThumbsDown size={22} />
+              <span className="text-xs font-semibold">Para nada</span>
+            </button>
+            <button
+              onClick={() => handleRate('learning')}
+              className="flex flex-col items-center gap-2 py-4 rounded-2xl border active:scale-95 transition-transform"
+              style={{ backgroundColor: '#f59e0b15', borderColor: '#f59e0b40', color: '#f59e0b' }}
+            >
+              <Minus size={22} />
+              <span className="text-xs font-semibold">Más o menos</span>
+            </button>
+            <button
+              onClick={() => handleRate('known')}
+              className="flex flex-col items-center gap-2 py-4 rounded-2xl border active:scale-95 transition-transform"
+              style={{ backgroundColor: '#22c55e15', borderColor: '#22c55e40', color: '#22c55e' }}
+            >
+              <ThumbsUp size={22} />
+              <span className="text-xs font-semibold">Me la sé</span>
+            </button>
+          </div>
         </div>
       )}
     </div>
