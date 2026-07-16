@@ -39,6 +39,7 @@ export default function Flashcards() {
   const [sessionResults, setSessionResults] = useState({ known: 0, learning: 0, unknown: 0 })
   const [screen, setScreen] = useState('setup') // 'setup' | 'playing' | 'done'
   const [pendingUpdates, setPendingUpdates] = useState([])
+  const [snapReset, setSnapReset] = useState(false)
 
   // Setup state
   const [statusFilter, setStatusFilter] = useState('all')
@@ -95,8 +96,10 @@ export default function Flashcards() {
       setScreen('done')
     } else {
       setPendingUpdates(prev => [...prev, promise])
-      setIndex(next)
+      setSnapReset(true)
       setFlipped(false)
+      setIndex(next)
+      requestAnimationFrame(() => requestAnimationFrame(() => setSnapReset(false)))
     }
   }
 
@@ -363,7 +366,7 @@ export default function Flashcards() {
 
       {/* Card */}
       <div className="flashcard-scene" style={{ height: cardData.example ? 360 : 300 }} onClick={() => setFlipped(!flipped)}>
-        <div className={`flashcard-inner${flipped ? ' flipped' : ''}`} style={{ height: '100%' }}>
+        <div className={`flashcard-inner${flipped ? ' flipped' : ''}${snapReset ? ' no-transition' : ''}`} style={{ height: '100%' }}>
           {/* Front */}
           <div className={`flashcard-face rounded-3xl border p-6 flex flex-col justify-between cursor-pointer ${card}`}>
             <div className="flex items-center justify-between">
