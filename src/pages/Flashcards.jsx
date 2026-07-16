@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { RotateCw, ThumbsUp, Minus, ThumbsDown, CheckCircle2, GalleryHorizontal, Settings2, ChevronRight } from 'lucide-react'
+import { useState } from 'react'
+import { RotateCw, ThumbsUp, Minus, ThumbsDown, CheckCircle2, GalleryHorizontal, Settings2, ChevronRight, Volume2 } from 'lucide-react'
 import { useWords, updateWordScore } from '../store'
 import { useTheme } from '../theme.jsx'
 
@@ -289,6 +289,17 @@ export default function Flashcards() {
   const catColor = CATEGORY_COLORS[cardData.category] || '#6366f1'
   const progress = (index / deck.length) * 100
 
+  // lang code → BCP-47 for Web Speech API
+  const LANG_MAP = { de: 'de-DE', en: 'en-US', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', pt: 'pt-BR', ja: 'ja-JP', zh: 'zh-CN', ko: 'ko-KR', ru: 'ru-RU', nl: 'nl-NL', pl: 'pl-PL', ar: 'ar-SA' }
+  function speak(text, lang) {
+    if (!window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+    const u = new SpeechSynthesisUtterance(text)
+    u.lang = LANG_MAP[lang] || lang
+    u.rate = 1
+    window.speechSynthesis.speak(u)
+  }
+
   return (
     <div className="flex flex-col gap-4 p-4 pb-28 max-w-lg mx-auto">
       <div className="pt-6 pb-1">
@@ -342,14 +353,23 @@ export default function Flashcards() {
             <>
               <p className={`text-4xl font-bold text-center ${text}`}>{cardData.original}</p>
               <p className={`text-xs uppercase tracking-wider ${subtext}`}>{cardData.from_lang} → {cardData.to_lang}</p>
-              <div className={`mt-2 px-4 py-2 rounded-full text-xs ${isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-zinc-100 text-zinc-400'}`}>
-                Toca para ver la traducción
-              </div>
+              <button
+                onClick={e => { e.stopPropagation(); speak(cardData.original, cardData.from_lang) }}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium transition-colors ${isDark ? 'bg-zinc-800 text-zinc-400 hover:text-blue-400' : 'bg-zinc-100 text-zinc-500 hover:text-blue-500'}`}
+              >
+                <Volume2 size={13} /> Escuchar
+              </button>
             </>
           ) : (
             <>
               <p className={`text-sm uppercase tracking-wider ${subtext}`}>{cardData.original}</p>
               <p className={`text-4xl font-bold text-center ${text}`}>{cardData.translation}</p>
+              <button
+                onClick={e => { e.stopPropagation(); speak(cardData.translation, cardData.to_lang) }}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium transition-colors ${isDark ? 'bg-zinc-800 text-zinc-400 hover:text-blue-400' : 'bg-zinc-100 text-zinc-500 hover:text-blue-500'}`}
+              >
+                <Volume2 size={13} /> Escuchar traducción
+              </button>
               {cardData.example && (
                 <div className={`rounded-xl p-3 w-full mt-1 ${innerCard}`}>
                   <p className={`text-xs italic text-center ${muted}`}>"{cardData.example}"</p>
